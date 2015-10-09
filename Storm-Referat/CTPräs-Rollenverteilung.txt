@@ -1,0 +1,9 @@
+1. Basics: Streamingplatform: was ist das? Zugrunde liegende Technologien, genereller Aufbau. Wie steht Storm zu diesen Basics? Innovationen?
+Funktionsweise in-depth erklärt. Wo wird Storm eingesetzt, für welche Jobs eignet es sich? 								-Patrick
+
+2. Einsatz:  Wie programmiert man für/mit Storm?
+Gegenüberstellung zu eigenhändiger from-scratch-Programmierung: Was erleichtert es einem konkret?
+Was sind Vorteile von Storm, evtl. auch im Vergleich zur Konkurrenz? Wo hat Storm Probleme?								-Simon
+
+
+3. Demo: 																												-Philipp
