@@ -6,7 +6,7 @@ import Adafruit_BMP.BMP085 as BMP085
 def readline(): # ignores \r
     line = "";
     while True:
-        byte = socket.recv(1)
+        byte = conn.recv(1)
         if "\n" == byte:
             return line
         elif "\r" == byte:
@@ -19,7 +19,7 @@ def handler():
     try:
         print "Got connection from:", addr
         while True:
-            msg = readline(conn)
+            msg = readline()
             if msg == "TEMP":
                 conn.send('{0:0.2f}\n'.format(sensor.read_temperature()))
             elif msg == "PRES":
@@ -38,8 +38,8 @@ def handler():
 if __name__ == '__main__':
     sensor = BMP085.BMP085()
     soc = socket.socket()
-    soc.bind(("localhost", 1337))
+    soc.bind(("", 1337))
     soc.listen(5)  # max 5 waiting connections
     while True:
         conn, addr = soc.accept()
-        thread.start_new_thread(handler, (conn, addr))
+        thread.start_new_thread(handler, ())
