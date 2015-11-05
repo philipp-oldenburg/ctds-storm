@@ -43,3 +43,5 @@ if __name__ == '__main__':
     while True:
         conn, addr = soc.accept()
         thread.start_new_thread(handler, ())
+		
+		
