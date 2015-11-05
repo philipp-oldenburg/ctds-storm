@@ -7,7 +7,12 @@ public class SensorClient {
 	private PrintWriter dout;
 	private BufferedReader din;
 
-	public SensorClient() {
+	/** Builds up connection to sensor server.<br>
+	 * 	Available methods: getTemperature(), getPressure(), getAltitude().<br>
+	 *  Connection gets closed automatically during object finalization.
+	 * @param serverIP IP or hostname of the server
+	 */
+	public SensorClient(String serverIP) {
 		try {
 			socket = new Socket("localhost", 1337);  
 			dout = new PrintWriter(socket.getOutputStream());
@@ -17,16 +22,25 @@ public class SensorClient {
 		}
 	}
 	
+	/** Requests temperature from the server and waits for response.
+	 * @return temperature in °C
+	 */
 	public double getTemperature() {
 		String res = requestAndWaitForResponse("TEMP");
 		return Double.valueOf(res);
 	}
 	
+	/** Requests Pressure from the server and waits for response.
+	 * @return pressure in Pa
+	 */
 	public double getPressure() {
-		String res = requestAndWaitForResponse("PRESS");
+		String res = requestAndWaitForResponse("PRES");
 		return Double.valueOf(res);
 	}
 	
+	/** Requests altitude from the server and waits for response.
+	 * @return altitude in m
+	 */
 	public double getAltitude() {
 		String res = requestAndWaitForResponse("ALTI");
 		return Double.valueOf(res);
