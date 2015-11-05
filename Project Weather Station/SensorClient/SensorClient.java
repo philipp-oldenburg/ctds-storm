@@ -14,7 +14,7 @@ public class SensorClient {
 	 */
 	public SensorClient(String serverIP) {
 		try {
-			socket = new Socket("localhost", 1337);  
+			socket = new Socket(serverIP, 1337);  
 			dout = new PrintWriter(socket.getOutputStream());
 			din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (Exception e) {
@@ -43,6 +43,14 @@ public class SensorClient {
 	 */
 	public double getAltitude() {
 		String res = requestAndWaitForResponse("ALTI");
+		return Double.valueOf(res);
+	}
+	
+	/** Requests sealevel pressure from the server and waits for response.
+	 * @return sealevel pressure in Pa
+	 */
+	public double getSealevelPressure() {
+		String res = requestAndWaitForResponse("SEAL");
 		return Double.valueOf(res);
 	}
 	
