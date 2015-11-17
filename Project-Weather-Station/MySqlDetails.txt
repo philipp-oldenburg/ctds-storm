@@ -1,0 +1,3 @@
+DB-Name: WeatherStationDB
+DB-User: WSDBUser
+DB-PW: qa$U4a_Rep3e
