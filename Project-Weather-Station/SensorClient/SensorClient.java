@@ -64,7 +64,8 @@ public class SensorClient {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return "failed";
+		// should never happen
+		return "-1";
 	}
 	
 	@Override
