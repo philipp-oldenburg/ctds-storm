@@ -54,6 +54,14 @@ public class SensorClient {
 		return Double.valueOf(res);
 	}
 	
+	/** Requests humidity from the server and waits for response.
+	 * @return relative humidity
+	 */
+	public double getHumidity() {
+		String res = requestAndWaitForResponse("HUMI");
+		return Double.valueOf(res);
+	}
+	
 	private String requestAndWaitForResponse(String request) {
 		try {
 			dout.println(request);
