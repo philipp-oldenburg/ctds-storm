@@ -22,7 +22,7 @@ public class SensorClient {
 		}
 	}
 	
-	/** Requests temperature from the server and waits for response.
+	/** Requests temperature the server and waits for response.
 	 * @return temperature in °C
 	 */
 	public double getTemperature() {
@@ -30,7 +30,7 @@ public class SensorClient {
 		return Double.valueOf(res);
 	}
 	
-	/** Requests Pressure from the server and waits for response.
+	/** Requests Pressure from server and waits for response.
 	 * @return pressure in Pa
 	 */
 	public double getPressure() {
@@ -38,7 +38,7 @@ public class SensorClient {
 		return Double.valueOf(res);
 	}
 	
-	/** Requests altitude from the server and waits for response.
+	/** Requests altitude from server and waits for response.
 	 * @return altitude in m
 	 */
 	public double getAltitude() {
@@ -46,7 +46,7 @@ public class SensorClient {
 		return Double.valueOf(res);
 	}
 	
-	/** Requests sealevel pressure from the server and waits for response.
+	/** Requests sealevel pressure from server and waits for response.
 	 * @return sealevel pressure in Pa
 	 */
 	public double getSealevelPressure() {
@@ -54,11 +54,19 @@ public class SensorClient {
 		return Double.valueOf(res);
 	}
 	
-	/** Requests humidity from the server and waits for response.
+	/** Requests humidity from server and waits for response.
 	 * @return relative humidity
 	 */
 	public double getHumidity() {
 		String res = requestAndWaitForResponse("HUMI");
+		return Double.valueOf(res);
+	}
+	
+	/** Requests luminosity from server and waits for response.
+	 * @return luminosity in lux
+	 */
+	public double getLuminosity() {
+		String res = requestAndWaitForResponse("LUMI");
 		return Double.valueOf(res);
 	}
 	
