@@ -13,7 +13,8 @@ public class Test {
 		System.out.println(client.getPressure());
 		System.out.println("SEAPRESS");
 		System.out.println(client.getSealevelPressure());
-		
+		System.out.println("LUMI");
+		System.out.println(client.getLuminosity());
 	}
 
 }
