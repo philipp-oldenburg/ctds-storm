@@ -226,10 +226,10 @@ Python 2.6.6
 Although some testing has shown that it is also running with newer versions of Java.
 \subsection{Nimbus and Supervisor nodes}
 The next step includes downloading a distribution of Apache Storm (\href{http://storm.apache.org/downloads.html}{link}) onto the devices which will run the Nimbus server and the Supervisor clients.
-To make them run altogether the conif file in \path{apache-storm/conf/storm.yaml} has to changed accordingly. The two attributes, storm.zookeeper.servers and nimbus.host has to be set to IP addresses of the corresponding devices. In case of the Nimbus device they have to be set to "localhost". The attribute storm.local.dir has to be set to some path Storm can place data locally.
+To make them run altogether the config file in \path{apache-storm/conf/storm.yaml} has to changed accordingly. The two attributes, storm.zookeeper.servers and nimbus.host has to be set to IP addresses of the corresponding devices. In case of the Nimbus device they have to be set to "localhost". The attribute storm.local.dir has to be set to some path Storm can place data locally.
 \subsection{Setting up Supervisor}
 Apache Storm is a fail fast system, which means that it exits if there are any exceptions thrown. To make it run more stable a supervisor program can be used. It basically observes the Nimbus and Supervisor process and restarts them if they break down. A possible software solution would be Supervisor, a process control system, which runs only on UNIX-like operating systems. Download: \href{http://supervisord.org/#}{link}.
-To set it up the following lines have to be appended to \path{/etc/supervisord.conf}
+To set it up after installation the following lines have to be appended to \path{/etc/supervisord.conf}
 \begin{verbatim}
 [program:storm-nimbus]
 command=/usr/local/storm/bin/storm nimbus
@@ -252,7 +252,7 @@ For troubleshooting:
 \begin{verbatim}
 sudo supervisorctl status
 \end{verbatim}
-The sample configuration is this \href{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/#install-supervisord}{site}. The page also holds lots of useful information on setting up Apache Storm.
+The sample configuration is from this \href{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/#install-supervisord}{site}. The page also holds lots of useful information on setting up Apache Storm clusters.
 \subsection{Deploying topologies}
 After the explanation on how to create a cluster in \ref{sec:ImplementCluster}, the following part describes how to get said cluster deployed and running.\\
 First the coded cluster has to packed with all its packages into a jar file. It is rather important to include only libraries into the jar which are not from Apache Storm. Because including these libraries will end up in a topology which deployable. After successful packing the topology jar can be submitted to the running Storm Cluster via the storm client:
@@ -261,6 +261,9 @@ storm jar path/to/allmycode.jar org.me.MyTopology arg1 arg2 arg3
 \end{verbatim}
 More information on how to deploy a topology and troubleshooting can be found here: \href{http://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.html}{link}
 \section{Sources}
-go here
+\begin{itemize}
+\item http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/
+\item http://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.html
+\end{itemize}
 
 \end{document}
