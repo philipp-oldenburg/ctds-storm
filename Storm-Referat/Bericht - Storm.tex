@@ -12,6 +12,7 @@
 \usepackage{enumerate}
 \usepackage{graphicx}
 \usepackage{setspace}
+\usepackage{hyperref}
 
 \usepackage{listings}
 \lstset{language=c++}
@@ -81,27 +82,64 @@ In Storm, a Spout is the type of node in a Topology which emits one or more stre
 It is important that every (physical) device on which a \textit{Supervisor} is run actually has access to the original source of data. This is due to the fact that the developer working with Storm has no control over the location where the Spouts and Bolts are actually run; This assignment is done by the Nimbus. It should therefore be assumed that \textit{every} physical device in the Cluster could potentially be selected to have one or more Spouts running on it. In the case of the original data source being a website, this is of course an almost negligible limitation. But if the data originates from a certain process running on a separate machine, the developer has to make the data available to the Spouts by implementing a server.\\
 
 When talking about Spouts, there is an important distinction to make between \textit{reliable} and \textit{unreliable} Spouts. Imagine this like the difference between TCP and UDP: An unreliable Spout simply outputs data without requiring confirmation of any sort; a simple fire-and-forget implementation. A reliable Spout on the other hand provides the tools to check not only if the sent data tuple actually makes it to its recipient, but if the data tuple has completed its entire journey through the Topology. The two methods which a Spout provides to that end are called \textit{ack} and \textit{fail}, which are called whenever a tuple emitted from the Spout successfully completes its journey or fails along the road.
-\section{Phillips Teil}
-\section{Apache Storm Setup}
 
-%To setup a Apache Storm cluster you need to go over 4 steps:
-%Setup a Zookeeper Cluster (/Server)
-%Install dependencies on the Nimbus and Supervisor nodes
-%Download and configure Storm on Nimbus and Supervisor nodes
-%Launching the node processes under supervision
-%
-%1. Depending on how big your Storm Cluster will be you have to determine the number of Supervisor nodes you want to use. In cases of small cluster you can have a Zookeeper cluster which consists of only one Zookeeper server.
-%The download can be found here:
-%2. The dependencies for running the Supervisor client / Nimbus server are:
-%Java 6
-%Python 2.6.6
-%	Hint: While we were setting up our cluster we used the latest versions of Java and Python 2 	and everything worked just fine.
-%3. After installing dependencies you have to download Apache Storm onto your Nimbus
-%and your Supervisor machines.
-%	Additionaly you have to type in the ip or hostname of the Nimbus server in the config file 	which lies in apache-storm\conf\storm.yaml so that you Supervisors can find the Nimbus 	Server.
-%	The Nimbus server itself does not have any information about the Supervisor clients which 	will be connected to him.
-%4. For the last step we want to have a software which is launching our Nimbus / Supervisor / Zookeeper clients under supervision. This means that everytime they crash, they will be restarted immediately. This is most important for Zookeeper server which is exiting after every Exception.
-%	Some possible supervisor softwares are:
 \section{Simons Teil}
+\label{sec:Simons Teil}
+
 ...kommt hier hin
+
+\section{Apache Storm Setup}
+The following 4 steps demonstrate how to setup an Apache Storm Cluster
+\subsection{Setup a Zookeeper Cluster}
+Depending on how big the Storm Cluster will be the number of Supervisor nodes has to be determined. In cases of small clusters it sufficient to have a Zookeeper cluster with one Zookeeper server only.
+The Apache Zookeeper server can be found under the following \href{http://www.eu.apache.org/dist/zookeeper/stable/}{link}. The config file in \path{zookeper/conf/zoo_sample.cfg} should be checked and the following two lines appended, to prevent running out of disk space.
+\begin{verbatim}
+autopurge.purgeInterval=24
+autopurge.snapRetainCount=5  
+\end{verbatim}
+The server can be started afterwards by running the following script: \path{zookeper/bin/zkServer[.cmd|.sh]}
+\subsection{Install dependencies}
+Apache Storm has some dependencies for software versions of the Supervisor nodes:
+\begin{verbatim}
+Java 6
+Python 2.6.6
+\end{verbatim}
+Although some testing has shown that it is also running with newer versions of Java.
+\subsection{Nimbus and Supervisor nodes}
+The next step includes downloading a distribution of Apache Storm (\href{http://storm.apache.org/downloads.html}{link}) onto the devices which will run the Nimbus server and the Supervisor clients.
+To make them run altogether the conif file in \path{apache-storm/conf/storm.yaml} has to changed accordingly. The two attributes, storm.zookeeper.servers and nimbus.host has to be set to IP addresses of the corresponding devices. In case of the Nimbus device they have to be set to "localhost". The attribute storm.local.dir has to be set to some path Storm can place data locally.
+\subsection{Setting up Supervisor}
+Apache Storm is a fail fast system, which means that it exits if there are any exceptions thrown. To make it run more stable a supervisor program can be used. It basically observes the Nimbus and Supervisor process and restarts them if they break down. A possible software solution would be Supervisor, a process control system, which runs only on UNIX-like operating systems. Download: \href{http://supervisord.org/#}{link}.
+To set it up the following lines have to be appended to \path{/etc/supervisord.conf}
+\begin{verbatim}
+[program:storm-nimbus]
+command=/usr/local/storm/bin/storm nimbus
+user=storm
+autostart=true
+autorestart=true
+startsecs=10
+startretries=999
+log_stdout=true
+log_stderr=true
+logfile=/var/log/storm/nimbus.out
+logfile_maxbytes=20MB
+logfile_backups=10
+\end{verbatim}
+The command and logfile path have to be changed accordingly as well as the program name. After setting up the configuration file the supervisor daemon has to be started with: 
+\begin{verbatim}
+sudo service supervisord start
+\end{verbatim}
+For troubleshooting:
+\begin{verbatim}
+sudo supervisorctl status
+\end{verbatim}
+The sample configuration is this \href{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/#install-supervisord}{site}. The page also holds lots of useful information on setting up Apache Storm.
+\subsection{Deploying topologies}
+After the explanation on how to create a topology in \ref{sec:Simons Teil} the following part describes what to do after the implementation of a cluster.\\
+First the coded cluster has to packed with all its packages into a jar file. It is rather important to include only libraries into the jar which are not from Apache Storm. Because including these libraries will end up in a topology which deployable. After successful packing the topology jar can be submitted to the running Storm Cluster via the storm client:
+\begin{verbatim}
+storm jar path/to/allmycode.jar org.me.MyTopology arg1 arg2 arg3
+\end{verbatim}
+More information on how to deploy a topology and troubleshooting can be found here: \href{http://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.html}{link}
+
 \end{document}
