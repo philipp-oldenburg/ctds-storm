@@ -15,7 +15,7 @@
 \usepackage{hyperref}
 
 \usepackage{listings}
-\lstset{language=c++}
+\lstset{language=java}
 
 \title{Currend Trends in Distributed Systems\\\textbf{Apache Storm}\\\large{- Report of the presentation on October 16, 2015 -}}
 \date{}
@@ -122,12 +122,91 @@ So far, we have mainly covered the main aspects of the Supervisors - running a c
 \includegraphics[scale=1]{images/example-of-a-running-topology.png}
 \end{center}
 Not explicitly stated is the fact that the blue Spout has been specified to be run on two Tasks, the green Bolt on four and the yellow Bolt on six. By also defining a parallelism hint, the Nimbus now has all the information it needs to evenly distribute the tasks among their respective Executors, and assign these Executors to the Worker processes.
+%                Simon's Part
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
+\section{Implementation}
+\subsection{Programming Languages}
+Storm is written in Java, and is therefore best used in an application written in Java as well. If the developer is, however, hard-pressed on using a different language, Storm by default supports integration of the programming languages \textit{Python}, \textit{Fancy} and \textit{Ruby} via ShellBolts and -Spouts. So the usage of a Bolt written in Python might look like this:\\
+\begin{lstlisting}
+public static void SplitSentence extends ShellBolt
+                                 implements IRichBolt {
+                                 
+    public SplitSentence() {
+        super("python", "splitsentence.py");
+    }
+    
+    public void declareOutputFields(
+            OutputFiledDeclarer declarer) {
+        declarer.declare(new Fields("word"));
+    }
+    
+}
+\end{lstlisting}
+\subsection{Bolts and Spouts in Java}
+\label{sec:ImplementNodes}
+Java is a object oriented language, and as such the nodes of a topology are objects. In order to define a Spout or Bolt, the developer can either extend a pre-existing Bolt or Spout class or directly implement an interface. Storm provides the classes \textit{BaseRichBolt} and \textit{BaseRichSpout} as well as the interfaces \textit{IRichBolt} and \textit{IRichSpout} for the user to build off of.\\
 
-\section{Simons Teil}
-\label{sec:Simons Teil}
+The processing logic of the node is then defined in a function \lstinline$public void$\\
+\lstinline$nextTuple()$ for Spouts and \lstinline$public void execute(Tuple tuple)$ for Bolts. The function execute will be called whenever the Bolt receives a tuple and be given that tuple as a parameter, while the nextTuple function will be called as often as the hardware allows. Should this not be desired it is advised, that the developer lets the function terminate without taking action rather than letting it sleep, as Storm calls all the Spout methods on the same thread.
 
-...kommt hier hin
+A simple implementation of a Spout and Bolt may look like this:
+\begin{lstlisting}
+public class MySpout extends BaseRichSpout {
+    @Override
+    public void nextTuple() {
+        String output = "some data";
+        _collector.emit(new Values(output));
+    }
+}
 
+public class MyBolt extends BaseRichBolt {
+    @Override
+    public void execute(Tuple tuple)
+        int output = someFunction(tuple.getInteger(0));
+        _collector.emit(tuple, new Values(output));
+        _collector.ack(tuple);
+    }
+}
+\end{lstlisting}
+\subsection{Topologies in Java}
+\label{sec:ImplementTopology}
+In order to combine the Bolts and Spouts created in \ref{sec:ImplementNodes} into a functioning topology, one needs to start with a TopologyBuilder object provided by Storm. This object can add nodes to the topology by calling the function \textit{setSpout} and \textit{setBolt}, which take anode object as well as a number describing how many instances of these nodes are to be running in parallel in the network. These nodes can then be linked via a set of grouping functions that define which nodes will receive which node's emitted tuples as an input stream.\\
+
+A simple topology might look like this:
+\begin{lstlisting}
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("sentences", new RandomSentenceSpout(), 5);
+builder.setBolt("split", new SplitSentence(), 8)
+    .shuffleGrouping("sentences");
+builder.setBolt("count", new WordCount(), 12)
+    .fieldsGrouping("split", new Fields("word"));
+\end{lstlisting}
+Which will generate a topology such as this:\\
+
+\includegraphics[width=\textwidth]{images/WordCountGraph.png} 
+
+\subsection{Clusters in Java}
+\label{sec:ImplementCluster}
+As with everything else, Storm clusters in Java are represented as objects. Once the topology is defined as specified in \ref{sec:ImplementTopology}, it can be submitted to a cluster along with a configuration object that defines certain things like the number of workers to be distributed throughout the network.\\
+
+A simple cluster might look like this:
+\begin{lstlisting}
+Config conf = new Config();
+conf.setNumWorkers(2);
+DistributedCluster cluster = new DistributedCluster();
+cluster.submitTopology("someID", conf,
+    builder.createTopology());
+\end{lstlisting}
+%                Phillip's Part
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------------------
 \section{Apache Storm Setup}
 The following 4 steps demonstrate how to setup an Apache Storm Cluster
 \subsection{Setup a Zookeeper Cluster}
@@ -175,7 +254,7 @@ sudo supervisorctl status
 \end{verbatim}
 The sample configuration is this \href{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/#install-supervisord}{site}. The page also holds lots of useful information on setting up Apache Storm.
 \subsection{Deploying topologies}
-After the explanation on how to create a topology in \ref{sec:Simons Teil} the following part describes what to do after the implementation of a cluster.\\
+After the explanation on how to create a cluster in \ref{sec:ImplementCluster}, the following part describes how to get said cluster deployed and running.\\
 First the coded cluster has to packed with all its packages into a jar file. It is rather important to include only libraries into the jar which are not from Apache Storm. Because including these libraries will end up in a topology which deployable. After successful packing the topology jar can be submitted to the running Storm Cluster via the storm client:
 \begin{verbatim}
 storm jar path/to/allmycode.jar org.me.MyTopology arg1 arg2 arg3
