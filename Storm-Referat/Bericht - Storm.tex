@@ -7,13 +7,28 @@
 
 \usepackage{fancyhdr}
 \usepackage{lastpage}
+\usepackage{float}
+\usepackage[font=footnotesize,labelfont=bf]{caption}
 
 \usepackage{lastpage}
 \usepackage{enumerate}
 \usepackage{graphicx}
 \usepackage{setspace}
 \usepackage[hidelinks]{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=black,
+	urlcolor=blue,
+}
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks%  save the current one
+  \do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j%
+  \do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t%
+  \do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D%
+  \do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N%
+  \do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X%
+  \do\Y\do\Z}
 
+%\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
 \usepackage{listings}
 \lstset{language=java}
 
@@ -25,7 +40,7 @@
 \selectlanguage{english}
 \maketitle
 \section{Abstract}
-Bevor wir mit unserem Bericht beginnen, möchte ich ein paar Worte sagen. Und hier sind sie: Schwachkopf! Schwabbelspeck! Krimskrams! Quiek! Danke sehr!
+As part of the seminar \textit{Current Trends in Distributed Systems} at the University of Basel, our team aims to give an overview over Apache Storm, a free and open source distributed realtime computation system. In this paper we will detail the conceptual workings of Storms as well as how to set up a distributed cluster.
 \tableofcontents
 \section{What is Storm?}
 \onehalfspacing
@@ -65,9 +80,12 @@ Thus, it becomes evident why Storm is better off using as small a Zookeeper Clus
 \section{Topologies}
 
 Now that we've covered the underlying structure with which Storm works, it is time to clarify how the actual work is done. In Storm, all computational tasks are essentially nodes, this time in a graph which is called a \textbf{Topology}. This concept is fairly simple: A Topology is an unweighted, directed graph consisting of \textbf{Spouts} and \textbf{Bolts}. These nodes are then connected by data streams from one node to the other, as is illustrated in the following figure from the Storm website:\\
+\begin{figure}[H]
 \begin{center}
 \includegraphics[scale=0.7]{images/topology.png}
 \end{center}
+\caption{Simple example topology}
+\end{figure}
 Note that every node can potentially be connected to a multitude of Bolts, both through incoming and outgoing streams (Spouts are the exception here. This is due to the different role which the Spouts play in a Topology and will be explained in the following paragraphs)
 
 \subsection{Of Spouts, Bolts and everything in between}
@@ -106,9 +124,12 @@ In order to understand stream grouping, one first needs to get a graps on anothe
 The last few paragraphs introduced a lot of terminology and concepts which may be quite confusing at a first glance. The differences between them however, while sometimes not very obvious, are important enough to be looked at in more detail, and some concept are also worth reiterating at this point.\\
 
 First of all, it should be clarified how exactly the tasks fit into the whole picture using the following figure:\\
+\begin{figure}[H]
 \begin{center}
 \includegraphics[scale=0.7]{images/Storm-Supervisors-Workers-Executors-Tasks.png}
 \end{center}
+\caption{Grouping of Supervisor subunits}
+\end{figure}
 We can see that the whole thing depicts a Supervisor daemon which is run on a node in the Cluster, thereby identifying that node as a worker node. The Supervisor then can run one or more Worker processes, each of which is running in its own JVM.\\
 \indent Now comes the interesting part: As mentioned in the last chapter, each Component (Spout or Bolt) has a certain amount of Tasks specified (by the developer) which execute said Component's computations. It is worth noting now, however, that a Task itself is not a thread, but instead is run inside an \textit{Executor} thread. While an Executor can run an arbitrary number of tasks, it is generally recommended to have each task running on its own Executor.\\
 \indent In this illustration, the colour of each Task specifies to which Component it belongs; In this case, the blue Tasks might belong to the Spout called BlueSpout, the green Tasks to the Bolt GreenBolt etc. As a clarification: Every Task of a certain Component runs the exact same code. This is the code specified by the developer, for example in the \textit{execute}-Method of a Bolt.\\
@@ -118,9 +139,12 @@ We can see that the whole thing depicts a Supervisor daemon which is run on a no
 
 So far, we have mainly covered the main aspects of the Supervisors - running a certain number of workers, specifying Components and on how many Tasks they run their computations - but the actual functionality of the Nimbus pretty much remained a mystery. The observant reader however might have noticed that especially in the topics covered in these last few paragraphs, the Nimbus has been very active behind the scenes: All kinds of administrative work like assigning Workers to Supervisors, grouping Tasks into Executors and Executors into Workers is actually done by the Nimbus.\\
 \indent Assignment of the Workers is rather straight forward; the Nimbus tends to distribute these evenly across its Supervisors and make changes if necessary. For the rest, there is one last important concept called \textit{Parallelism hint}, which is best explained using another illustration from Storm's website:\\
+\begin{figure}[H]
 \begin{center}
 \includegraphics[scale=1]{images/example-of-a-running-topology.png}
 \end{center}
+\caption{The concept of parallelism}
+\end{figure}
 Not explicitly stated is the fact that the blue Spout has been specified to be run on two Tasks, the green Bolt on four and the yellow Bolt on six. By also defining a parallelism hint, the Nimbus now has all the information it needs to evenly distribute the tasks among their respective Executors, and assign these Executors to the Worker processes.
 %                Simon's Part
 %-------------------------------------------------------------------------------------------------------------
@@ -147,11 +171,10 @@ public static void SplitSentence extends ShellBolt
 }
 \end{lstlisting}
 \subsection{Spouts and Bolts in Java}
-\label{sec:ImplementCOmponents}
-Java is a object oriented language, and as such the components of a topology are objects. In order to define a Spout or Bolt, the developer can either extend a pre-existing Bolt or Spout class or directly implement an interface. Storm provides the classes \textit{BaseRichBolt} and \textit{BaseRichSpout} as well as the interfaces \textit{IRichBolt} and \textit{IRichSpout} for the user to build off of.\\
+\label{sec:ImplementComponents}
+Java is an object oriented language, and as such the components of a topology are objects. In order to define a Spout or Bolt, the developer can either extend a pre-existing Bolt or Spout class or directly implement an interface. Storm provides the classes \textit{BaseRichBolt} and \textit{BaseRichSpout} as well as the interfaces \textit{IRichBolt} and \textit{IRichSpout} for the user to build off of.\\
 
-The processing logic of the component is then defined in a function \lstinline$public void$\\
-\lstinline$nextTuple()$ for Spouts and \lstinline$public void execute(Tuple tuple)$ for Bolts. The function \textit{execute} will be called whenever the Bolt receives a tuple and be given that tuple as a parameter, while the \textit{nextTuple} function will be called as often as the hardware allows. Should this not be desired, it is advised that the developer lets the function terminate without taking action until an action is to be taken rather than letting it sleep, as Storm calls all the Spout methods on the same thread.
+The processing logic of the component is then defined in a function \lstinline$public void nextTuple()$ for Spouts and \lstinline$public void execute(Tuple tuple)$ for Bolts. The function \textit{execute} will be called whenever the Bolt receives a tuple and be given that tuple as a parameter, while the \textit{nextTuple} function will be called as often as the hardware allows. Should this not be desired, it is advised that the developer lets the function terminate without taking action until an action is to be taken rather than letting it sleep, as Storm calls all the Spout methods on the same thread.
 
 A simple implementation of a Spout and Bolt may look like this:
 \begin{lstlisting}
@@ -210,7 +233,7 @@ cluster.submitTopology("someID", conf,
 \section{Apache Storm Setup}
 The following 4 steps demonstrate how to setup an Apache Storm Cluster
 \subsection{Setup a Zookeeper Cluster}
-Depending on how big the Storm Cluster will be the number of Supervisor nodes has to be determined. In cases of small clusters it sufficient to have a Zookeeper cluster with one Zookeeper server only.
+Depending on how big the Storm Cluster will be the number of Supervisor nodes has to be determined. In cases of small clusters it is sufficient to have a Zookeeper cluster with one Zookeeper server only.
 The Apache Zookeeper server can be found under the following \href{http://www.eu.apache.org/dist/zookeeper/stable/}{link}. The config file in \path{zookeper/conf/zoo_sample.cfg} should be checked and the following two lines appended, to prevent running out of disk space.
 \begin{verbatim}
 autopurge.purgeInterval=24
@@ -226,9 +249,9 @@ Python 2.6.6
 Although some testing has shown that it is also running with newer versions of Java.
 \subsection{Nimbus and Supervisor nodes}
 The next step includes downloading a distribution of Apache Storm (\href{http://storm.apache.org/downloads.html}{link}) onto the devices which will run the Nimbus server and the Supervisor clients.
-To make them run altogether the config file in \path{apache-storm/conf/storm.yaml} has to changed accordingly. The two attributes, storm.zookeeper.servers and nimbus.host has to be set to IP addresses of the corresponding devices. In case of the Nimbus device they have to be set to "localhost". The attribute storm.local.dir has to be set to some path Storm can place data locally.
+In order to establish a connection between them and the Zookeeper, the config file in \path{apache-storm/conf/storm.yaml} has to be changed accordingly. The two attributes \verb!storm.zookeeper.servers! and \verb!nimbus.host! have to be set to the IP addresses of the corresponding devices. In case of the Nimbus device they have to be set to "localhost". The attribute storm.local.dir has to be set to some path indicating a directory where Storm can store data locally.
 \subsection{Setting up Supervisor}
-Apache Storm is a fail fast system, which means that it exits if there are any exceptions thrown. To make it run more stable a supervisor program can be used. It basically observes the Nimbus and Supervisor process and restarts them if they break down. A possible software solution would be Supervisor, a process control system, which runs only on UNIX-like operating systems. Download: \href{http://supervisord.org/#}{link}.
+Apache Storm is a fail fast system, which means that it exits if there are any exceptions thrown. To make it run more stable a supervisory program can be used. It basically observes the Nimbus and Supervisor process and restarts them if they break down. A possible software solution would be Supervisor, a process control system, which runs only on UNIX-like operating systems. Download: \href{http://supervisord.org/#}{link}.
 To set it up after installation the following lines have to be appended to \path{/etc/supervisord.conf}
 \begin{verbatim}
 [program:storm-nimbus]
@@ -244,7 +267,7 @@ logfile=/var/log/storm/nimbus.out
 logfile_maxbytes=20MB
 logfile_backups=10
 \end{verbatim}
-The command and logfile path have to be changed accordingly as well as the program name. After setting up the configuration file the supervisor daemon has to be started with: 
+The command and logfile path as well as the program name have to be changed accordingly. After setting up the configuration file the supervisor daemon (which is a component of the supervisory program not to be confused with the Supervisor process running on the node) has to be started with: 
 \begin{verbatim}
 sudo service supervisord start
 \end{verbatim}
@@ -255,15 +278,18 @@ sudo supervisorctl status
 The sample configuration is from this \href{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/#install-supervisord}{site}. The page also holds lots of useful information on setting up Apache Storm clusters.
 \subsection{Deploying topologies}
 After the explanation on how to create a cluster in \ref{sec:ImplementCluster}, the following part describes how to get said cluster deployed and running.\\
-First the coded cluster has to packed with all its packages into a jar file. It is rather important to include only libraries into the jar which are not from Apache Storm. Because including these libraries will end up in a topology which deployable. After successful packing the topology jar can be submitted to the running Storm Cluster via the storm client:
+First the coded cluster has to packed with all its packages into a jar file. It is rather important to include only libraries into the jar which are not from Apache Storm, since including these libraries will end up in a topology which is not deployable. After successfully packing the topology jar, it can be submitted to the running Storm Cluster via the storm client:
 \begin{verbatim}
 storm jar path/to/allmycode.jar org.me.MyTopology arg1 arg2 arg3
 \end{verbatim}
-More information on how to deploy a topology and troubleshooting can be found here: \href{http://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.html}{link}
+More information on how to deploy a topology and troubleshooting can be found  \href{http://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.html}{here}:
 \section{Sources}
 \begin{itemize}
-\item http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/
-\item http://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.html
+\item \url{http://storm.apache.org/documentation.html}
+\item \url{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/}
 \end{itemize}
-
+\begin{description}
+\item[Figure 1] \url{http://storm.apache.org/tutorial.html}
+\item[Figure 3] \url{http://storm.apache.org/documentation/Understanding-the-parallelism-of-a-Storm-topology.html}
+\end{description}
 \end{document}
