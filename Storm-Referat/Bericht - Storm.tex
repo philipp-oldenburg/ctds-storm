@@ -130,7 +130,7 @@ Not explicitly stated is the fact that the blue Spout has been specified to be r
 %-------------------------------------------------------------------------------------------------------------
 \section{Implementation}
 \subsection{Programming Languages}
-Storm is written in Java, and is therefore best used in an application written in Java as well. If the developer is, however, hard-pressed on using a different language, Storm by default supports integration of the programming languages \textit{Python}, \textit{Fancy} and \textit{Ruby} via ShellBolts and -Spouts. So the usage of a Bolt written in Python might look like this:\\
+Storm, having it's Workers running on a Java Virtual Machine, offers extensive support for Java is best used in an application written in Java. If the developer is, however, hard-pressed on using a different language, Storm by default supports integration of the programming languages \textit{Python}, \textit{Fancy} and \textit{Ruby} into Java code via ShellBolts and -Spouts. So the usage of a Bolt written in Python might look like this:\\
 \begin{lstlisting}
 public static void SplitSentence extends ShellBolt
                                  implements IRichBolt {
@@ -146,12 +146,12 @@ public static void SplitSentence extends ShellBolt
     
 }
 \end{lstlisting}
-\subsection{Bolts and Spouts in Java}
-\label{sec:ImplementNodes}
-Java is a object oriented language, and as such the nodes of a topology are objects. In order to define a Spout or Bolt, the developer can either extend a pre-existing Bolt or Spout class or directly implement an interface. Storm provides the classes \textit{BaseRichBolt} and \textit{BaseRichSpout} as well as the interfaces \textit{IRichBolt} and \textit{IRichSpout} for the user to build off of.\\
+\subsection{Spouts and Bolts in Java}
+\label{sec:ImplementCOmponents}
+Java is a object oriented language, and as such the components of a topology are objects. In order to define a Spout or Bolt, the developer can either extend a pre-existing Bolt or Spout class or directly implement an interface. Storm provides the classes \textit{BaseRichBolt} and \textit{BaseRichSpout} as well as the interfaces \textit{IRichBolt} and \textit{IRichSpout} for the user to build off of.\\
 
-The processing logic of the node is then defined in a function \lstinline$public void$\\
-\lstinline$nextTuple()$ for Spouts and \lstinline$public void execute(Tuple tuple)$ for Bolts. The function execute will be called whenever the Bolt receives a tuple and be given that tuple as a parameter, while the nextTuple function will be called as often as the hardware allows. Should this not be desired it is advised, that the developer lets the function terminate without taking action rather than letting it sleep, as Storm calls all the Spout methods on the same thread.
+The processing logic of the component is then defined in a function \lstinline$public void$\\
+\lstinline$nextTuple()$ for Spouts and \lstinline$public void execute(Tuple tuple)$ for Bolts. The function \textit{execute} will be called whenever the Bolt receives a tuple and be given that tuple as a parameter, while the \textit{nextTuple} function will be called as often as the hardware allows. Should this not be desired, it is advised that the developer lets the function terminate without taking action until an action is to be taken rather than letting it sleep, as Storm calls all the Spout methods on the same thread.
 
 A simple implementation of a Spout and Bolt may look like this:
 \begin{lstlisting}
@@ -174,7 +174,7 @@ public class MyBolt extends BaseRichBolt {
 \end{lstlisting}
 \subsection{Topologies in Java}
 \label{sec:ImplementTopology}
-In order to combine the Bolts and Spouts created in \ref{sec:ImplementNodes} into a functioning topology, one needs to start with a TopologyBuilder object provided by Storm. This object can add nodes to the topology by calling the function \textit{setSpout} and \textit{setBolt}, which take anode object as well as a number describing how many instances of these nodes are to be running in parallel in the network. These nodes can then be linked via a set of grouping functions that define which nodes will receive which node's emitted tuples as an input stream.\\
+In order to combine the Bolts and Spouts created in \ref{sec:ImplementComponents} into a functioning topology, one needs to start with a TopologyBuilder object provided by Storm. This object can add components to the topology by calling the function \textit{setSpout} and \textit{setBolt}, which take a component object as well as a number describing how many instances of these components are to be running in parallel in the network. These components can then be linked via a set of grouping functions that define which components will receive which component's emitted tuples as an input stream.\\
 
 A simple topology might look like this:
 \begin{lstlisting}
