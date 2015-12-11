@@ -57,9 +57,9 @@ To understand the functionality of Apache Storm, it is important to first get a 
 
 \subsection{Pre-Topology Level: Nodes and Clusters}
 
-As mentioned earlier, Storm aims to distribute workload among all nodes in the so-called Cluster. In Storm, a node can either take the role of the \textbf{Nimbus}, or it can become a \textbf{worker node} (that is, run a \textbf{Supervisor} process). It is important to note, however, that the node itself is not automatically bound to a specific role: On startup, Storm assigns a daemon to each node, and it is this daemon that separates the Nimbus from the ''common workers''.\\\\
+As mentioned earlier, Storm aims to distribute workload among all nodes in the so-called Cluster. In Storm, a node can either take the role of the \textbf{Nimbus}, or it can become a \textbf{worker node} (that is, run a \textbf{Supervisor} process). It is important to note, however, that the node itself is not automatically bound to a specific role: Upon designing a Cluster, the developer assigns a daemon to each node, and it is this daemon that separates the Nimbus from the ''common workers''.\\
 
-The Nimbus process is basically the control center of the entire Cluster. It is aware of all the tasks which the Topology runs and assigns these tasks to the nodes running a worker daemon. Additionally, the Nimbus contains the code for every one of said tasks. Whenever it assigns a task to a worker, the worker is provided with the code snippet that it is supposed to execute. Another very important functionality of the Nimbus is load balancing: The Nimbus is constantly provided with feedback concerning the effectiveness of its workers. If a worker is unable to efficiently execute its assigned tasks, for example due to it being run on weaker hardware than other nodes, the Nimbus tries to alleviate pressure on said weak node and assign some tasks to another, less busy worker in order to optimize performance.\\
+The Nimbus process is basically the control center of the entire Cluster. It is aware of all the tasks which the Topology runs and assigns these tasks to the nodes running a Supervisor daemon. Additionally, the Nimbus contains the code for every one of said tasks. Whenever it assigns a task to a worker, the worker is provided with the code snippet that it is supposed to execute. Another very important functionality of the Nimbus is load balancing: The Nimbus is constantly provided with feedback concerning the effectiveness of its workers. If a worker is unable to efficiently execute its assigned tasks, for example due to it being run on weaker hardware than other nodes, the Nimbus tries to alleviate pressure on said weak node and assign some tasks to another, less busy worker in order to optimize performance.\\
 
 It is important to note that there is only a single Nimbus in every Cluster. This may of course seem counterintuitive at a first glance: If a Cluster contains hundreds or even thousands of worker nodes, this one control node might easily collapse under the sheer pressure that the task of managing every single worker entails. In reality however, the Nimbus utilizes another type of node which exists outside of the Cluster itself, which greatly reduces the processing power required for the Nimbus. But these so-called \textbf{Zookeepers} deserve a section of their own and will be discussed later.\\\\
 
@@ -176,7 +176,7 @@ Java is an object oriented language, and as such the components of a topology ar
 
 The processing logic of the component is then defined in a function \lstinline$public void nextTuple()$ for Spouts and \lstinline$public void execute(Tuple tuple)$ for Bolts. The function \textit{execute} will be called whenever the Bolt receives a tuple and be given that tuple as a parameter, while the \textit{nextTuple} function will be called as often as the hardware allows. Should this not be desired, it is advised that the developer lets the function terminate without taking action until an action is to be taken rather than letting it sleep, as Storm calls all the Spout methods on the same thread.
 
-A simple implementation of a Spout and Bolt may look like this:
+A simple implementation of a Spout and Bolt may look like this:\\
 \begin{lstlisting}
 public class MySpout extends BaseRichSpout {
     @Override
@@ -214,9 +214,9 @@ Which will generate a topology such as this:\\
 
 \subsection{Clusters in Java}
 \label{sec:ImplementCluster}
-As with everything else, Storm clusters in Java are represented as objects. Once the topology is defined as specified in \ref{sec:ImplementTopology}, it can be submitted to a cluster along with a configuration object that defines certain things like the number of workers to be distributed throughout the network.\\
+As with everything else, Storm clusters in Java are represented as objects. Once the topology is defined as specified in \ref{sec:ImplementTopology}, it can be submitted to a Cluster along with a configuration object that defines certain things like the number of workers to be distributed throughout the network.\\
 
-A simple cluster might look like this:
+A simple Cluster might look like this:
 \begin{lstlisting}
 Config conf = new Config();
 conf.setNumWorkers(2);
@@ -249,7 +249,7 @@ Python 2.6.6
 Although some testing has shown that it is also running with newer versions of Java.
 \subsection{Nimbus and Supervisor nodes}
 The next step includes downloading a distribution of Apache Storm (\href{http://storm.apache.org/downloads.html}{link}) onto the devices which will run the Nimbus server and the Supervisor clients.
-In order to establish a connection between them and the Zookeeper, the config file in \path{apache-storm/conf/storm.yaml} has to be changed accordingly. The two attributes \verb!storm.zookeeper.servers! and \verb!nimbus.host! have to be set to the IP addresses of the corresponding devices. In case of the Nimbus device they have to be set to "localhost". The attribute storm.local.dir has to be set to some path indicating a directory where Storm can store data locally.
+In order to establish a connection between them and the Zookeeper, the config file in \path{apache-storm/conf/storm.yaml} has to be changed accordingly. The two attributes \verb!storm.zookeeper.servers! and \verb!nimbus.host! have to be set to the IP addresses of the corresponding devices. In case of the Nimbus device they have to be set to "localhost". The attribute \verb!storm.local.dir! has to be set to some path indicating a directory where Storm can store data locally.
 \subsection{Setting up Supervisor}
 Apache Storm is a fail fast system, which means that it exits if there are any exceptions thrown. To make it run more stable a supervisory program can be used. It basically observes the Nimbus and Supervisor process and restarts them if they break down. A possible software solution would be Supervisor, a process control system, which runs only on UNIX-like operating systems. Download: \href{http://supervisord.org/#}{link}.
 To set it up after installation the following lines have to be appended to \path{/etc/supervisord.conf}
@@ -275,7 +275,7 @@ For troubleshooting:
 \begin{verbatim}
 sudo supervisorctl status
 \end{verbatim}
-The sample configuration is from this \href{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/#install-supervisord}{site}. The page also holds lots of useful information on setting up Apache Storm clusters.
+The sample configuration is from \href{http://www.michael-noll.com/tutorials/running-multi-node-storm-cluster/#install-supervisord}{this site}. The page also holds lots of useful information on setting up Apache Storm clusters.
 \subsection{Deploying topologies}
 After the explanation on how to create a cluster in \ref{sec:ImplementCluster}, the following part describes how to get said cluster deployed and running.\\
 First the coded cluster has to packed with all its packages into a jar file. It is rather important to include only libraries into the jar which are not from Apache Storm, since including these libraries will end up in a topology which is not deployable. After successfully packing the topology jar, it can be submitted to the running Storm Cluster via the storm client:
