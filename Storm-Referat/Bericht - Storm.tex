@@ -197,7 +197,7 @@ public class MyBolt extends BaseRichBolt {
 \end{lstlisting}
 \subsection{Topologies in Java}
 \label{sec:ImplementTopology}
-In order to combine the Bolts and Spouts created in \ref{sec:ImplementComponents} into a functioning topology, one needs to start with a TopologyBuilder object provided by Storm. This object can add components to the topology by calling the function \textit{setSpout} and \textit{setBolt}, which take a component object as well as a number describing how many instances of these components are to be running in parallel in the network. These components can then be linked via a set of grouping functions that define which components will receive which component's emitted tuples as an input stream.\\
+In order to combine the Bolts and Spouts created in \ref{sec:ImplementComponents} into a functioning topology, one needs to start with a TopologyBuilder object provided by Storm. This object can add components to the topology by calling the function \textit{setSpout} and \textit{setBolt}, which take a component object as well as a number describing how many instances of these components are to be running in parallel in the network. These components can then be linked via a set of grouping functions that define which components will receive which component's emitted tuples as an input stream.\newpage
 
 A simple topology might look like this:
 \begin{lstlisting}
