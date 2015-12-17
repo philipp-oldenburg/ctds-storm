@@ -1,0 +1,2 @@
+http://ddogleg.org/
+http://ejml.org/wiki/index.php?title=Main_Page
