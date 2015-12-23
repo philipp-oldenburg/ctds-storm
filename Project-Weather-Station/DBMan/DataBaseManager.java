@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -15,7 +16,7 @@ public class DataBaseManager {
 	
 	private class DataCollector extends Thread {
 		
-		private static final long ACQUIREDATAINTERVAL = 10000;
+		private static final long ACQUIREDATAINTERVAL = 30000;
 		
 		private static final double TEMPDEFAULTVALUE = -300;
 		private static final double PRESDEFAULTVALUE = -1;
@@ -26,9 +27,10 @@ public class DataBaseManager {
 		
 		private SensorClientInterface client;
 		private Connection dbConnection;
-		private boolean sensorsAvailable;
+		private boolean sensorServerAvailable;
 		private boolean weathermapAccessible;
 		
+		private String sensorServerAddress;
 		
 		private String url = "jdbc:mysql://localhost:3306/ctds_db_test";
 		private String user = "CTDS_DB_User";
@@ -65,6 +67,67 @@ public class DataBaseManager {
 			return conn;
 		}
 		
+		private class SCReconnector extends Thread {
+			private SensorClient client;
+			
+			public SCReconnector(SensorClient client) {
+				this.client = client;
+			}
+			
+			public void run() {
+				while (true) {
+					try {
+						client = new SensorClient(sensorServerAddress);
+						sensorServerAvailable = true;
+						break;
+					} catch(UnknownHostException e) {
+						System.out.println("Unknown Host. Please verify if SensorServer is actually running.");
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e1) {
+							e1.printStackTrace();
+						}
+						continue;
+					} catch(IOException e) {
+						System.out.println("IOException. Do something.");
+						e.printStackTrace();
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e1) {
+							e1.printStackTrace();
+						}
+						continue;
+					}
+				}
+			}
+		}
+		
+//		private void reestablishSensorServerConnection() {
+//			while (true) {
+//				try {
+//					client = new SensorClient(sensorServerAddress);
+//					break;
+//				} catch(UnknownHostException e) {
+//					System.out.println("Unknown Host. Please verify if SensorServer is actually running.");
+//					try {
+//						Thread.sleep(1000);
+//					} catch (InterruptedException e1) {
+//						e1.printStackTrace();
+//					}
+//					continue;
+//				} catch(IOException e) {
+//					System.out.println("IOException. Do something.");
+//					e.printStackTrace();
+//					try {
+//						Thread.sleep(1000);
+//					} catch (InterruptedException e1) {
+//						e1.printStackTrace();
+//					}
+//					continue;
+//				}
+//			}
+//		}
+		
 		public void run() {
 			registerDriver();
 			dbConnection = establishConnection();
@@ -90,13 +153,12 @@ public class DataBaseManager {
 					e1.printStackTrace();
 				}
 				
-				WeatherData data = initializeWeatherDataObject(currentWeather, sensorsAvailable, weathermapAccessible);
-				
-				String query = "INSERT INTO weatherdatalog (temperature, pressure, humidity, windspeed, winddegree, light, cloudiness, owmweatherdesc)"
+				WeatherData data = initializeWeatherDataObject(currentWeather, sensorServerAvailable, weathermapAccessible);
+
+				String query = "INSERT INTO weatherdatalog (temperature, pressure, humidity, sensorwindspeed, owmwindspeed, owmwinddegree, light, owmweathername, owmweatherdesc)"
 								+ " VALUES (" + data.getTemp() + ", " + data.getPressure() + ", " + data.getHumidity() + ", "
-								+ data.getWindSpeed() + ", " + data.getWindDegree() + ", " + data.getLight()
+								+ data.getSensorWindSpeed() + ", " + data.getOwmWindSpeed() + ", " + data.getOwmWindDegree() + ", " + data.getLight()
 								+ ", '"+ data.getOwmName() + "', '" + data.getOwmDesc() + "');";
-				
 				try {
 					Statement statement = dbConnection.createStatement();
 					statement.executeUpdate(query);
@@ -118,28 +180,36 @@ public class DataBaseManager {
 		 * service if possible or set to default values (which cannot occur naturally, marking them as missing).
 		 * 
 		 * @param currentWeather	CurrentWeather object from which OWM data will be taken.
-		 * @param sensorsAvailable	If false, no data will be taken from the SensorClient.
+		 * @param sensorServerAvailable	If false, no data will be taken from the SensorClient.
 		 * @param weathermapAccessible	If false, no data will be taken from OpenWeatherMap service.
 		 * @return
 		 */
-		private WeatherData initializeWeatherDataObject(CurrentWeather currentWeather, boolean sensorsAvailable, boolean weathermapAccessible) {
+		private WeatherData initializeWeatherDataObject(CurrentWeather currentWeather, boolean sensorServerAvailable, boolean weathermapAccessible) {
 			WeatherData data = new WeatherData();
 			if (weathermapAccessible) {
-				if (sensorsAvailable) {
+				if (sensorServerAvailable) {
 					initWDwithSensorData(data);
-					data.setWindDegree(currentWeather.getWindInstance().getWindDegree());
+					data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
+					float temp = currentWeather.getWindInstance().getWindDegree();
+					if (Float.compare(Float.NaN, temp) == 0) {
+						data.setOwmWindDegree(0);
+					} else {
+						data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
+					}
 					data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
 					data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
 				} else {
 					initWDwithOWMData(currentWeather, data);
 					data.setLight(LIGHTDEFAULTVALUE);
+					data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
 				}
 			} else {
-				if (sensorsAvailable) {
+				if (sensorServerAvailable) {
 					initWDwithSensorData(data);
 					data.setOwmDesc("N/A");
 					data.setOwmName("N/A");
-					data.setWindDegree(WDEGREEDEFAULTVALUE);
+					data.setOwmWindSpeed(WSPEEDDEFAULTVALUE);
+					data.setOwmWindDegree(WDEGREEDEFAULTVALUE);
 				} else {
 					initWDwithDefaultData(data);
 				}
@@ -155,8 +225,9 @@ public class DataBaseManager {
 			data.setTemp(TEMPDEFAULTVALUE);
 			data.setPressure(PRESDEFAULTVALUE);
 			data.setHumidity(HUMDEFAULTVALUE);
-			data.setWindSpeed(WSPEEDDEFAULTVALUE);
-			data.setWindDegree(WDEGREEDEFAULTVALUE);
+			data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
+			data.setOwmWindSpeed(WSPEEDDEFAULTVALUE);
+			data.setOwmWindDegree(WDEGREEDEFAULTVALUE);
 			data.setLight(LIGHTDEFAULTVALUE);
 			data.setOwmDesc("N/A");
 			data.setOwmName("N/A");
@@ -171,8 +242,8 @@ public class DataBaseManager {
 			data.setTemp(fahrenheitToCelsius(currentWeather.getMainInstance().getTemperature()));
 			data.setPressure(currentWeather.getMainInstance().getPressure());
 			data.setHumidity(currentWeather.getMainInstance().getHumidity());
-			data.setWindSpeed(currentWeather.getWindInstance().getWindSpeed());
-			data.setWindDegree(currentWeather.getWindInstance().getWindDegree());
+			data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
+			data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
 			data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
 			data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
 		}
@@ -184,9 +255,9 @@ public class DataBaseManager {
 		 */
 		private void initWDwithSensorData(WeatherData data) {
 			data.setTemp(client.getTemperature());
-			data.setPressure(client.getPressure());
+			data.setPressure(client.getPressure()/100);
 			data.setHumidity(client.getHumidity());
-			data.setWindSpeed(client.getWindSpeed());
+			data.setSensorWindSpeed(client.getWindSpeed());
 			data.setLight(client.getLight());
 		}
 		
@@ -203,12 +274,13 @@ public class DataBaseManager {
 		/**Constructor
 		 * 
 		 * @param client SensorClient instance which the collector shall use to acquire data.
-		 * @param sensorsAvailable  If true, data is collected from given SensorClient (where possible). Otherwise, all data
+		 * @param sensorServerAvailable  If true, data is collected from given SensorClient (where possible). Otherwise, all data
 		 * is taken from openweathermap.org.
 		 */
-		public DataCollector(SensorClientInterface client, boolean sensorsAvailable) {
+		public DataCollector(SensorClientInterface client, boolean sensorServerAvailable) {
 			this.client = client;
-			this.sensorsAvailable = sensorsAvailable;
+			this.sensorServerAvailable = sensorServerAvailable;
+			sensorServerAddress = client.getSensorServerAddress();
 		}
 		
 		@Override
@@ -221,12 +293,11 @@ public class DataBaseManager {
 	/**Constructor
 	 * 
 	 * @param client SensorClient instance to be passed to the collector.
-	 * @param sensorsAvailable  If true, the collector gets its data from the given SensorClient (where possible). Otherwise, all data
+	 * @param sensorServerAvailable  If true, the collector gets its data from the given SensorClient (where possible). Otherwise, all data
 	 * is taken from openweathermap.org.
 	 */
-	public DataBaseManager(SensorClientInterface client, boolean sensorsAvailable) {
-		collector = new DataCollector(client, sensorsAvailable);
+	public DataBaseManager(SensorClientInterface client, boolean sensorServerAvailable) {
+		collector = new DataCollector(client, sensorServerAvailable);
 		collector.start();
-		System.out.println("started collector");
 	}
 }

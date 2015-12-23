@@ -25,6 +25,11 @@ public class DBManTester {
 
 		@Override
 		public double getLight() { return 10000; }
+
+		@Override
+		public String getSensorServerAddress() {
+			return null;
+		}
 	}
 	
 	@Test
@@ -33,7 +38,7 @@ public class DBManTester {
 		System.out.println("creating dbman");
 		DataBaseManager dbMan = new DataBaseManager(client, false);
 		while(true) {
-			//Noob approach, I know, but the test has to keep running so the DBMan actually gets some work done before
+			//Noob approach, I know, but the test has to keep running so the DBMan actually gets some work done
 			//before the test terminates, and I can't be arsed to write anything fancy.
 		}
 	}
