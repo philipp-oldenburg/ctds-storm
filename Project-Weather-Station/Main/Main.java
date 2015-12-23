@@ -67,31 +67,42 @@ public class Main {
 //			e.printStackTrace();
 //		}
 
-		String consoleInput;
-		Scanner sysInScanner = new Scanner(System.in);
-		SensorClientInterface client;
-		while (true) {
-			System.out.println("Please input SensorServer IP address:");
-			consoleInput = sysInScanner.nextLine();
-			System.out.println("Is input a valid IP address? Answer: " + checkIfStringIsIPAddress(consoleInput));
-			
-			try {
-				client = new SensorClient(consoleInput);
-			} catch (UnknownHostException e){
-				System.out.println("Could not find host:");
-				e.printStackTrace();
-				System.out.println("Please verify IP address and availability of the SensorServer.");
-				continue;
-			} catch (IOException e) {
-				System.out.println("Detected IO error:");
-				e.printStackTrace();
-				System.out.println("Please verify IP address and availability of the SensorServer.");
-				continue;
-			}
-			break;
+//		String consoleInput;
+//		Scanner sysInScanner = new Scanner(System.in);
+		SensorClientInterface client = null;
+		String ipAddress = args[0];
+		System.out.println(ipAddress);
+		try {
+			client = new SensorClient(ipAddress);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-
-		sysInScanner.close();
+//		while (true) {
+//			System.out.println("Please input SensorServer IP address:");
+//			consoleInput = sysInScanner.nextLine();
+//			System.out.println("Is input a valid IP address? Answer: " + checkIfStringIsIPAddress(consoleInput));
+//			
+//			try {
+//				client = new SensorClient(consoleInput);
+//			} catch (UnknownHostException e){
+//				System.out.println("Could not find host:");
+//				e.printStackTrace();
+//				System.out.println("Please verify IP address and availability of the SensorServer.");
+//				continue;
+//			} catch (IOException e) {
+//				System.out.println("Detected IO error:");
+//				e.printStackTrace();
+//				System.out.println("Please verify IP address and availability of the SensorServer.");
+//				continue;
+//			}
+//			break;
+//		}
+//
+//		sysInScanner.close();
 		
 		DataBaseManager dbMan = new DataBaseManager(client, true);
 		
