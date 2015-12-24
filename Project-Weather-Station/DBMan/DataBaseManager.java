@@ -4,6 +4,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.json.JSONException;
 
@@ -24,6 +31,10 @@ public class DataBaseManager {
 		private static final double WSPEEDDEFAULTVALUE = -1;
 		private static final float WDEGREEDEFAULTVALUE = -1;
 		private static final double LIGHTDEFAULTVALUE = -1;
+
+		private static final long WEATHER_REQUEST_TIMEOUT = 2;
+
+		private static final int ITERATION_LIMIT = 5;
 		
 		private SensorClientInterface client;
 		private Connection dbConnection;
@@ -128,6 +139,42 @@ public class DataBaseManager {
 //			}
 //		}
 		
+		private CurrentWeather getCurrentWeatherWithTimeout(OpenWeatherMap owmap, CurrentWeather currentWeather) throws ExecutionException, InterruptedException, TimeoutException {
+			
+			ExecutorService executor = Executors.newCachedThreadPool();
+			
+			Callable<CurrentWeather> task = new Callable<CurrentWeather>() {
+				public CurrentWeather call() throws IOException, JSONException {
+					return owmap.currentWeatherByCityName("Basel", "CH");
+				}
+			};
+			
+			Future<CurrentWeather> future = executor.submit(task);
+			currentWeather = future.get(WEATHER_REQUEST_TIMEOUT, TimeUnit.SECONDS);
+			
+//			int tries = 0;
+//			while(tries < ITERATION_LIMIT) {
+//				Future<CurrentWeather> future = executor.submit(task);
+//				try {
+//					currentWeather = future.get(WEATHER_REQUEST_TIMEOUT, TimeUnit.SECONDS);
+//					break;
+//				} catch (InterruptedException e) {
+//					System.out.println("Request interrupted while waiting for response.");
+//					e.printStackTrace();
+//					continue;
+//				} catch (TimeoutException e) {
+//					System.out.println("Did not receive response within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
+//					e.printStackTrace();
+//					continue;
+//				} 
+//				finally {		What would happen here? finally is going to be called after the continue/break, does that mean that future is 
+//					future.cancel(true);		already gone at this point, causing a runtime error?
+//				}
+//			}
+			
+			return currentWeather;
+		}
+		
 		public void run() {
 			registerDriver();
 			dbConnection = establishConnection();
@@ -136,7 +183,7 @@ public class DataBaseManager {
 			String apiKey = "26ef2b98aa2077410020408feb29cde8";
 			
 			OpenWeatherMap owmap = new OpenWeatherMap(apiKey);
-			
+			System.out.println("created OpenWeatherMap instance");
 			
 			
 			while(true) {
@@ -144,13 +191,20 @@ public class DataBaseManager {
 				CurrentWeather currentWeather = null;
 				try {
 					weathermapAccessible = true;
-					currentWeather = owmap.currentWeatherByCityName("Basel", "CH");
-				} catch (IOException e1) {
+					currentWeather = getCurrentWeatherWithTimeout(owmap, currentWeather);
+					System.out.println("Received current Weather.");
+				} catch (ExecutionException e1) {
+					System.out.println("OpenWeatherMap appears to be inaccessible.");
 					weathermapAccessible = false;
 					e1.printStackTrace();
-				} catch (JSONException e1) {
+				} catch (InterruptedException e) {
 					weathermapAccessible = false;
-					e1.printStackTrace();
+					System.out.println("Request interrupted while waiting for response.");
+					e.printStackTrace();
+				} catch (TimeoutException e) {
+					weathermapAccessible = false;
+					System.out.println("Did not receive response within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
+					e.printStackTrace();
 				}
 				
 				WeatherData data = initializeWeatherDataObject(currentWeather, sensorServerAvailable, weathermapAccessible);
@@ -161,6 +215,7 @@ public class DataBaseManager {
 								+ ", '"+ data.getOwmName() + "', '" + data.getOwmDesc() + "');";
 				try {
 					Statement statement = dbConnection.createStatement();
+					System.out.println("Executing query...");
 					statement.executeUpdate(query);
 					System.out.println("Inserted data");
 				} catch (SQLException e) {
