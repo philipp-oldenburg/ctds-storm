@@ -337,7 +337,11 @@ public class DataBaseManager {
 		public DataCollector(SensorClientInterface client, boolean sensorServerAvailable) {
 			this.client = client;
 			this.sensorServerAvailable = sensorServerAvailable;
-			sensorServerAddress = client.getSensorServerAddress();
+			if (client == null) {
+				sensorServerAddress = "192.168.2.123";
+			} else {
+				sensorServerAddress = client.getSensorServerAddress();
+			}
 		}
 		
 		@Override
