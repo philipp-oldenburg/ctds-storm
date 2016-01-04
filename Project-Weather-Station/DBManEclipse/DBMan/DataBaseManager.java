@@ -46,6 +46,8 @@ public class DataBaseManager {
 		private String url = "jdbc:mysql://localhost:3306/ctds_db_test";
 		private String user = "CTDS_DB_User";
 		private String password = "password";
+
+		private OpenWeatherMap owmap;
 		
 		/** Needed for some reason. Remember to add Connector/J to classpath, otherwise everything's fucked
 		 * 
@@ -139,7 +141,7 @@ public class DataBaseManager {
 //			}
 //		}
 		
-		private CurrentWeather getCurrentWeatherWithTimeout(OpenWeatherMap owmap, CurrentWeather currentWeather) throws ExecutionException, InterruptedException, TimeoutException {
+		private CurrentWeather getCurrentWeatherWithTimeout(CurrentWeather currentWeather) throws ExecutionException, InterruptedException, TimeoutException {
 			
 			ExecutorService executor = Executors.newCachedThreadPool();
 			
@@ -182,7 +184,7 @@ public class DataBaseManager {
 			// #1 security EU. Plz no stealerino.
 			String apiKey = "26ef2b98aa2077410020408feb29cde8";
 			
-			OpenWeatherMap owmap = new OpenWeatherMap(apiKey);
+			owmap = new OpenWeatherMap(apiKey);
 			System.out.println("created OpenWeatherMap instance");
 			
 			
@@ -191,7 +193,7 @@ public class DataBaseManager {
 				CurrentWeather currentWeather = null;
 				try {
 					weathermapAccessible = true;
-					currentWeather = getCurrentWeatherWithTimeout(owmap, currentWeather);
+					currentWeather = getCurrentWeatherWithTimeout(currentWeather);
 					System.out.println("Received current Weather.");
 				} catch (ExecutionException e1) {
 					System.out.println("OpenWeatherMap appears to be inaccessible.");
