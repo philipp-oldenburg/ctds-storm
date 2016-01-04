@@ -32,28 +32,39 @@ public class Main {
 
 		SensorClientInterface client = null;
 		String ipAddress = null;
+		boolean requireSensorServerAvailable = false;
 		if (args.length != 0) {
+			requireSensorServerAvailable = Boolean.parseBoolean(args[1]);
 			ipAddress = args[0];
 		}
-		
+
+		boolean sensorServerAvailable = true;
 		if (checkIfStringIsIPAddress(ipAddress)) {
 			try {
 				client = new SensorClient(ipAddress);
 			} catch (UnknownHostException e){
-				System.out.println("Could not find host:");
-				e.printStackTrace();
-				client = standByForIP(client);
+				if (requireSensorServerAvailable) {	
+					System.out.println("Could not find host:");
+					e.printStackTrace();
+					client = standByForIP(client);
+				} else {
+					sensorServerAvailable = false;
+				}
 			} catch (IOException e) {
-				System.out.println("Detected IO exception:");
-				e.printStackTrace();
-				client = standByForIP(client);
+				if (requireSensorServerAvailable) {	
+					System.out.println("Detected IO exception:");
+					e.printStackTrace();
+					client = standByForIP(client);
+				} else {
+					sensorServerAvailable = false;
+				}
 			}
 		} else  {
 			System.out.println("Given Parameter is not a valid IP address.");
 			client = standByForIP(client);
 		}
 		
-		DataBaseManager dbMan = new DataBaseManager(client, true);
+		DataBaseManager dbMan = new DataBaseManager(client, sensorServerAvailable);
 		
 	}
 
