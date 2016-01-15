@@ -2,6 +2,9 @@ public class WeatherData {
 	private double temp ;
 	private double pressure;
 	private double humidity;
+	private double owmtemp ;
+	private double owmpressure;
+	private double owmhumidity;
 	private double sensorWindSpeed;
 	private double owmWindSpeed;
 	private double owmWindDegree;
@@ -35,6 +38,24 @@ public class WeatherData {
 	}
 	public void setHumidity(double humidity) {
 		this.humidity = isDoubleNaN(humidity) ? -1 : humidity;
+	}
+	public double getOwmTemp() {
+		return owmtemp;
+	}
+	public void setOwmTemp(double temp) {
+		this.owmtemp = isDoubleNaN(temp) ? -300 : temp;
+	}
+	public double getOwmPressure() {
+		return owmpressure;
+	}
+	public void setOwmPressure(double pressure) {
+		this.owmpressure = isDoubleNaN(pressure) ? -1 : pressure;
+	}
+	public double getOwmHumidity() {
+		return owmhumidity;
+	}
+	public void setOwmHumidity(double humidity) {
+		this.owmhumidity = isDoubleNaN(humidity) ? -1 : humidity;
 	}
 	public double getOwmWindSpeed() {
 		return owmWindSpeed;
