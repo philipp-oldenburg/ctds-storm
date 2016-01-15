@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
@@ -33,14 +34,17 @@ public class Main {
 		SensorClientInterface client = null;
 		String ipAddress = null;
 		boolean requireSensorServerAvailable = false;
-		if (args.length != 0) {
+		if (args.length == 2) {
 			requireSensorServerAvailable = Boolean.parseBoolean(args[1]);
+			ipAddress = args[0];
+		}else if (args.length == 1) {
 			ipAddress = args[0];
 		}
 
 		boolean sensorServerAvailable = true;
 		if (checkIfStringIsIPAddress(ipAddress)) {
 			try {
+				System.out.println("Looking for sensor server.");
 				client = new SensorClient(ipAddress);
 			} catch (UnknownHostException e){
 				if (requireSensorServerAvailable) {	
@@ -48,6 +52,7 @@ public class Main {
 					e.printStackTrace();
 					client = standByForIP(client);
 				} else {
+					System.out.println("Could not find host.");
 					sensorServerAvailable = false;
 				}
 			} catch (IOException e) {
@@ -56,6 +61,7 @@ public class Main {
 					e.printStackTrace();
 					client = standByForIP(client);
 				} else {
+					System.out.println("Detected IO exception.");
 					sensorServerAvailable = false;
 				}
 			}
@@ -63,9 +69,18 @@ public class Main {
 			System.out.println("Given Parameter is not a valid IP address.");
 			client = standByForIP(client);
 		}
-		
 		DataBaseManager dbMan = new DataBaseManager(client, sensorServerAvailable);
+		System.out.println("created DBMan");
 		
+		//For testing purposes
+//		MockWebServer webserver = new MockWebServer();
+//		try {
+//			Thread.sleep(1000);
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
+//		webserver.start();
+		//End of test stuff
 	}
 
 	private static SensorClientInterface standByForIP(SensorClientInterface client) {
