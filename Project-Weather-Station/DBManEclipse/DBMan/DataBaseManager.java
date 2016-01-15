@@ -147,12 +147,18 @@ public class DataBaseManager {
 			
 			Callable<CurrentWeather> task = new Callable<CurrentWeather>() {
 				public CurrentWeather call() throws IOException, JSONException {
-					return owmap.currentWeatherByCityName("Basel", "CH");
+					CurrentWeather currentWeather = owmap.currentWeatherByCityName("Basel", "CH");
+					if (currentWeather.getMainInstance() == null || currentWeather.getWindInstance() == null) {
+						throw new IOException();
+					}
+					return currentWeather;
 				}
 			};
 			
 			Future<CurrentWeather> future = executor.submit(task);
 			currentWeather = future.get(WEATHER_REQUEST_TIMEOUT, TimeUnit.SECONDS);
+			
+			
 			
 //			int tries = 0;
 //			while(tries < ITERATION_LIMIT) {
@@ -194,9 +200,9 @@ public class DataBaseManager {
 				try {
 					weathermapAccessible = true;
 					currentWeather = getCurrentWeatherWithTimeout(currentWeather);
-					System.out.println("Received current Weather.");
+					System.out.println("Received current Weather from OpenWeatherMap.");
 				} catch (ExecutionException e1) {
-					System.out.println("OpenWeatherMap appears to be inaccessible.");
+					System.out.println("OpenWeatherMap appears to be inaccessible or main/wind instance could not be retrieved.");
 					weathermapAccessible = false;
 					e1.printStackTrace();
 				} catch (InterruptedException e) {
@@ -247,12 +253,7 @@ public class DataBaseManager {
 				if (sensorServerAvailable) {
 					initWDwithSensorData(data);
 					data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
-					float temp = currentWeather.getWindInstance().getWindDegree();
-					if (Float.compare(Float.NaN, temp) == 0) {
-						data.setOwmWindDegree(0);
-					} else {
-						data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
-					}
+					data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
 					data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
 					data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
 				} else {
@@ -296,13 +297,18 @@ public class DataBaseManager {
 		 * @param data	WeatherData object to be initialized.
 		 */
 		private void initWDwithOWMData(CurrentWeather currentWeather, WeatherData data) {
-			data.setTemp(fahrenheitToCelsius(currentWeather.getMainInstance().getTemperature()));
-			data.setPressure(currentWeather.getMainInstance().getPressure());
-			data.setHumidity(currentWeather.getMainInstance().getHumidity());
-			data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
-			data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
-			data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
-			data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
+			try {
+				data.setTemp(fahrenheitToCelsius(currentWeather.getMainInstance().getTemperature()));
+				data.setPressure(currentWeather.getMainInstance().getPressure());
+				data.setHumidity(currentWeather.getMainInstance().getHumidity());
+				data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
+				data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
+				data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
+				data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
+			} catch (NullPointerException e) {
+				System.out.println("Could not get main/weather instance of currentWeather.\n Should have thrown exception. Something's seriously wrong here.");
+				e.printStackTrace();
+			}
 		}
 
 		/**Initializes data with all the values which the connected sensor array provides. WindDegree, WeatherDescription and WeatherName are
