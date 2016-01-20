@@ -43,5 +43,7 @@ public interface SensorClientInterface {
 	 * @return ^
 	 */
 	String getSensorServerAddress();
+	
+	public boolean ping();
 
 }
