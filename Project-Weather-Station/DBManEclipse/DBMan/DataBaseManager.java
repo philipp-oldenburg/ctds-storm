@@ -107,7 +107,6 @@ public class DataBaseManager {
 						client = new SensorClient(sensorServerAddress);
 						System.out.println("created new client");
 						sensorServerAvailable = true;
-						
 						break;
 					} catch(UnknownHostException e) {
 						System.out.println("Unknown Host. Please verify if SensorServer is actually running.");
@@ -200,22 +199,6 @@ public class DataBaseManager {
 			return currentWeather;
 		}
 		
-		boolean isPortReachable(String inHost, int inPort) throws UnknownHostException, IOException {
-			Socket socket = null;
-			boolean retVal = false;
-			try {
-				socket = new Socket(inHost, inPort);
-				retVal = true;
-			} finally {            
-				if (socket != null) {
-					try {
-						socket.close(); 
-					} catch(Exception e) {e.printStackTrace(); }
-				}
-			}
-			return retVal;
-		}
-		
 		public void run() {
 			registerDriver();
 			dbConnection = establishConnection();
@@ -248,6 +231,20 @@ public class DataBaseManager {
 					e.printStackTrace();
 				}
 				
+				try {
+					client.ping();
+					sensorServerAvailable = true;
+					System.out.println("SensorServer is available");
+				} catch (Exception e) {
+					sensorServerAvailable = false;
+					e.printStackTrace();
+					System.out.println("Client unreachable. Trying to reconnect...");
+					if (!reconnectorRunning) {
+						SCReconnector reconnector = new SCReconnector();
+						reconnector.start();
+					}
+				}
+				
 //				try {
 //					sensorServerAvailable = isPortReachable(sensorServerAddress, 1337);
 ////					if (client == null && sensorServerAvailable) {
@@ -269,7 +266,7 @@ public class DataBaseManager {
 //				}
 				System.out.println("Creating WeatherData object...");
 				
-				WeatherData data = initializeWeatherDataObject(currentWeather, true, weathermapAccessible);
+				WeatherData data = initializeWeatherDataObject(currentWeather, sensorServerAvailable, weathermapAccessible);
 				System.out.println("Created WeatherData object");
 				String query = "INSERT INTO weatherdatalog (temperature, pressure, humidity, owmtemperature, owmpressure, owmhumidity, sensorwindspeed, owmwindspeed, owmwinddegree, light, owmweathername, owmweatherdesc)"
 								+ " VALUES (" + data.getTemp() + ", " + data.getPressure() + ", " + data.getHumidity() + ", "
@@ -383,8 +380,9 @@ public class DataBaseManager {
 				data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
 				data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
 			} catch (NullPointerException e) {
-				System.out.println("Could not get main/weather instance of currentWeather.\n Should have thrown exception. Something's seriously wrong here.");
+				System.out.println("Could not get main/wind/weather instance of currentWeather.\n Should have thrown exception earlier. Something's seriously wrong here.");
 				e.printStackTrace();
+				initWDwithOwmDefaults(data);
 			}
 		}
 
