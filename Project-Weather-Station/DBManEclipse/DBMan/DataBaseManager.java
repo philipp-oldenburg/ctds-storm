@@ -235,7 +235,7 @@ public class DataBaseManager {
 					client.ping();
 					sensorServerAvailable = true;
 					System.out.println("SensorServer is available");
-				} catch (NullPointerException e) {
+				} catch (Exception e) {
 					sensorServerAvailable = false;
 					e.printStackTrace();
 					System.out.println("Client unreachable. Trying to reconnect...");

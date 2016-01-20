@@ -1,5 +1,14 @@
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import org.json.JSONException;
+
+import net.aksingh.owmjapis.CurrentWeather;
 
 public class SensorClient implements SensorClientInterface {
 	
@@ -22,7 +31,8 @@ public class SensorClient implements SensorClientInterface {
 			din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (Exception e) {
 			e.printStackTrace();
-		}  
+		}
+		socket.setSoTimeout(2000);
 		sensorServerAddress = serverIP;
 	}
 	
@@ -31,7 +41,12 @@ public class SensorClient implements SensorClientInterface {
 	 */
 	@Override
 	public double getTemperature() {
-		String res = requestAndWaitForResponse("TEMP");
+		String res;
+		try {
+			res = requestAndWaitForResponse("TEMP");
+		} catch (IOException e) {
+			return -300;
+		}
 		return Double.valueOf(res);
 	}
 	
@@ -40,7 +55,12 @@ public class SensorClient implements SensorClientInterface {
 	 */
 	@Override
 	public double getPressure() {
-		String res = requestAndWaitForResponse("PRES");
+		String res;
+		try {
+			res = requestAndWaitForResponse("PRES");
+		} catch (IOException e) {
+			return -1;
+		}
 		return Double.valueOf(res);
 	}
 	
@@ -49,7 +69,12 @@ public class SensorClient implements SensorClientInterface {
 	 */
 	@Override
 	public double getAltitude() {
-		String res = requestAndWaitForResponse("ALTI");
+		String res;
+		try {
+			res = requestAndWaitForResponse("ALTI");
+		} catch (IOException e) {
+			return -1;
+		}
 		return Double.valueOf(res);
 	}
 	
@@ -58,7 +83,12 @@ public class SensorClient implements SensorClientInterface {
 	 */
 	@Override
 	public double getSealevelPressure() {
-		String res = requestAndWaitForResponse("SEAL");
+		String res;
+		try {
+			res = requestAndWaitForResponse("SEAL");
+		} catch (IOException e) {
+			return -1;
+		}
 		return Double.valueOf(res);
 	}
 	
@@ -67,7 +97,12 @@ public class SensorClient implements SensorClientInterface {
 	 */
 	@Override
 	public double getHumidity() {
-		String res = requestAndWaitForResponse("HUMI");
+		String res;
+		try {
+			res = requestAndWaitForResponse("HUMI");
+		} catch (IOException e) {
+			return -1;
+		}
 		return Double.valueOf(res);
 	}
 	
@@ -76,7 +111,12 @@ public class SensorClient implements SensorClientInterface {
 	 */
 	@Override
 	public double getLight() {
-		String res = requestAndWaitForResponse("LUMI");
+		String res;
+		try {
+			res = requestAndWaitForResponse("LUMI");
+		} catch (IOException e) {
+			return -1;
+		}
 		return Double.valueOf(res);
 	}
 	
@@ -84,29 +124,38 @@ public class SensorClient implements SensorClientInterface {
 		return -1.0;
 	}
 	
-	public boolean ping() {
+	public boolean ping() throws IOException {
 		String res = "";
-		try {
-			res = requestAndWaitForResponse("PING");
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
+		
+		res = requestAndWaitForResponse("PING");
+		
 		return res.equals("PONG");
 	}
 	
-	private String requestAndWaitForResponse(String request) {
-		try {
-			dout.println(request);
-			dout.flush();
-			
-			String res = din.readLine();
-			return res;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		// should never happen
-		return "-1";
+	private String requestAndWaitForResponse(String request) throws IOException{
+		
+//		ExecutorService executor = Executors.newCachedThreadPool();
+//		final String req = request;
+//		Callable<String> task = new Callable<String>() {
+//			public String call() {
+//				dout.println(req);
+//				dout.flush();
+//				
+//				String res = din.readLine();
+//				return res;
+//			}
+//		};
+//		
+//		Future<String> future = executor.submit(task);
+//		return future.get(2, TimeUnit.SECONDS);
+//		
+		
+		
+		dout.println(request);
+		dout.flush();
+		
+		String res = din.readLine();
+		return res;
 	}
 	
 	@Override

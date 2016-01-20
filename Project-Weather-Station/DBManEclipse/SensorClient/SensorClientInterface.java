@@ -1,3 +1,4 @@
+import java.io.IOException;
 
 public interface SensorClientInterface {
 
@@ -44,6 +45,6 @@ public interface SensorClientInterface {
 	 */
 	String getSensorServerAddress();
 	
-	public boolean ping();
+	public boolean ping() throws IOException;
 
 }
