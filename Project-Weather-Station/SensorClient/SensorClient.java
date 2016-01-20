@@ -84,6 +84,17 @@ public class SensorClient implements SensorClientInterface {
 		return -1.0;
 	}
 	
+	public boolean ping() {
+		String res = "";
+		try {
+			res = requestAndWaitForResponse("PING");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return res.equals("PONG");
+	}
+	
 	private String requestAndWaitForResponse(String request) {
 		try {
 			dout.println(request);

@@ -1,9 +1,21 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -12,7 +24,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import net.aksingh.owmjapis.CurrentWeather;
 import net.aksingh.owmjapis.OpenWeatherMap;
@@ -20,6 +34,43 @@ import net.aksingh.owmjapis.OpenWeatherMap;
 public class DataBaseManager {
 	
 	private DataCollector collector;
+	
+	private String url = "jdbc:mysql://localhost:3306/ctds_db_test";
+	private String user = "CTDS_DB_User";
+	private String password = "password";
+	
+	private static final int WSS_PORT = 9001;
+	
+	/** Establishes connection to database. Host, User and Password are currently hardcoded.
+	 * 
+	 * @return Connection object to interact with database.
+	 */
+	private Connection establishConnection() {
+		
+		Connection conn = null;
+		try {
+			conn = DriverManager.getConnection(url, user, password);
+			System.out.println("Established connection");
+		} catch (SQLException e) {
+			System.out.println("Unable to establish connection.");
+			e.printStackTrace();
+		}
+		return conn;
+	}
+	
+	/** Does exactly what is says. Shouldn't fail.
+	 * 
+	 */
+	private void registerDriver() {
+		
+		try {
+			   Class.forName("com.mysql.jdbc.Driver");
+			   System.out.println("Successfully registered driver.");
+		} catch(ClassNotFoundException ex) {
+			ex.printStackTrace();
+			System.exit(1);
+		}
+	}
 	
 	private class DataCollector extends Thread {
 		
@@ -37,61 +88,26 @@ public class DataBaseManager {
 		private static final int ITERATION_LIMIT = 5;
 		
 		private SensorClientInterface client;
+		boolean reconnectorRunning = false;
 		private Connection dbConnection;
 		private boolean sensorServerAvailable;
 		private boolean weathermapAccessible;
 		
 		private String sensorServerAddress;
-		
-		private String url = "jdbc:mysql://localhost:3306/ctds_db_test";
-		private String user = "CTDS_DB_User";
-		private String password = "password";
 
 		private OpenWeatherMap owmap;
 		
-		/** Needed for some reason. Remember to add Connector/J to classpath, otherwise everything's fucked
-		 * 
-		 */
-		private void registerDriver() {
-			
-			try {
-				   Class.forName("com.mysql.jdbc.Driver");
-				   System.out.println("Successfully registered driver.");
-			} catch(ClassNotFoundException ex) {
-				ex.printStackTrace();
-				System.exit(1);
-			}
-		}
-		
-		/** Establishes connection to database. Host, User and Password are currently hardcoded.
-		 * 
-		 * @return Connection object to interact with database.
-		 */
-		private Connection establishConnection() {
-			
-			Connection conn = null;
-			try {
-				conn = DriverManager.getConnection(url, user, password);
-				System.out.println("Established connection");
-			} catch (SQLException e) {
-				System.out.println("Unable to establish connection.");
-				e.printStackTrace();
-			}
-			return conn;
-		}
-		
 		private class SCReconnector extends Thread {
-			private SensorClient client;
-			
-			public SCReconnector(SensorClient client) {
-				this.client = client;
-			}
 			
 			public void run() {
+				reconnectorRunning = true;
+				System.out.println("Started reconnector");
 				while (true) {
 					try {
 						client = new SensorClient(sensorServerAddress);
+						System.out.println("created new client");
 						sensorServerAvailable = true;
+						
 						break;
 					} catch(UnknownHostException e) {
 						System.out.println("Unknown Host. Please verify if SensorServer is actually running.");
@@ -103,7 +119,7 @@ public class DataBaseManager {
 						continue;
 					} catch(IOException e) {
 						System.out.println("IOException. Do something.");
-						e.printStackTrace();
+						//e.printStackTrace();
 						try {
 							Thread.sleep(1000);
 						} catch (InterruptedException e1) {
@@ -112,6 +128,7 @@ public class DataBaseManager {
 						continue;
 					}
 				}
+				reconnectorRunning = false;
 			}
 		}
 		
@@ -147,12 +164,18 @@ public class DataBaseManager {
 			
 			Callable<CurrentWeather> task = new Callable<CurrentWeather>() {
 				public CurrentWeather call() throws IOException, JSONException {
-					return owmap.currentWeatherByCityName("Basel", "CH");
+					CurrentWeather currentWeather = owmap.currentWeatherByCityName("Basel", "CH");
+					if (currentWeather.getMainInstance() == null || currentWeather.getWindInstance() == null) {
+						throw new IOException();
+					}
+					return currentWeather;
 				}
 			};
 			
 			Future<CurrentWeather> future = executor.submit(task);
 			currentWeather = future.get(WEATHER_REQUEST_TIMEOUT, TimeUnit.SECONDS);
+			
+			
 			
 //			int tries = 0;
 //			while(tries < ITERATION_LIMIT) {
@@ -177,6 +200,22 @@ public class DataBaseManager {
 			return currentWeather;
 		}
 		
+		boolean isPortReachable(String inHost, int inPort) throws UnknownHostException, IOException {
+			Socket socket = null;
+			boolean retVal = false;
+			try {
+				socket = new Socket(inHost, inPort);
+				retVal = true;
+			} finally {            
+				if (socket != null) {
+					try {
+						socket.close(); 
+					} catch(Exception e) {e.printStackTrace(); }
+				}
+			}
+			return retVal;
+		}
+		
 		public void run() {
 			registerDriver();
 			dbConnection = establishConnection();
@@ -194,11 +233,11 @@ public class DataBaseManager {
 				try {
 					weathermapAccessible = true;
 					currentWeather = getCurrentWeatherWithTimeout(currentWeather);
-					System.out.println("Received current Weather.");
-				} catch (ExecutionException e1) {
-					System.out.println("OpenWeatherMap appears to be inaccessible.");
+					System.out.println("Received current Weather from OpenWeatherMap.");
+				} catch (ExecutionException e) {
+					System.out.println("OpenWeatherMap appears to be inaccessible or main/wind instance could not be retrieved.");
 					weathermapAccessible = false;
-					e1.printStackTrace();
+					e.printStackTrace();
 				} catch (InterruptedException e) {
 					weathermapAccessible = false;
 					System.out.println("Request interrupted while waiting for response.");
@@ -209,10 +248,32 @@ public class DataBaseManager {
 					e.printStackTrace();
 				}
 				
-				WeatherData data = initializeWeatherDataObject(currentWeather, sensorServerAvailable, weathermapAccessible);
-
-				String query = "INSERT INTO weatherdatalog (temperature, pressure, humidity, sensorwindspeed, owmwindspeed, owmwinddegree, light, owmweathername, owmweatherdesc)"
+//				try {
+//					sensorServerAvailable = isPortReachable(sensorServerAddress, 1337);
+////					if (client == null && sensorServerAvailable) {
+////						client = new SensorClient(sensorServerAddress);
+////					}
+//					System.out.println("SensorServer is available");
+//				} catch (UnknownHostException e1) {
+//					if (!reconnectorRunning) {
+//						SCReconnector reconnector = new SCReconnector();
+//						reconnector.start();
+//					}
+//					e1.printStackTrace();
+//				} catch (IOException e1) {
+//					if (!reconnectorRunning) {
+//						SCReconnector reconnector = new SCReconnector();
+//						reconnector.start();
+//					}
+//					e1.printStackTrace();
+//				}
+				System.out.println("Creating WeatherData object...");
+				
+				WeatherData data = initializeWeatherDataObject(currentWeather, true, weathermapAccessible);
+				System.out.println("Created WeatherData object");
+				String query = "INSERT INTO weatherdatalog (temperature, pressure, humidity, owmtemperature, owmpressure, owmhumidity, sensorwindspeed, owmwindspeed, owmwinddegree, light, owmweathername, owmweatherdesc)"
 								+ " VALUES (" + data.getTemp() + ", " + data.getPressure() + ", " + data.getHumidity() + ", "
+								+ data.getOwmTemp() + ", " + data.getOwmPressure() + ", " + data.getOwmHumidity() + ", "
 								+ data.getSensorWindSpeed() + ", " + data.getOwmWindSpeed() + ", " + data.getOwmWindDegree() + ", " + data.getLight()
 								+ ", '"+ data.getOwmName() + "', '" + data.getOwmDesc() + "');";
 				try {
@@ -243,35 +304,49 @@ public class DataBaseManager {
 		 */
 		private WeatherData initializeWeatherDataObject(CurrentWeather currentWeather, boolean sensorServerAvailable, boolean weathermapAccessible) {
 			WeatherData data = new WeatherData();
+			System.out.println("Created WD instance");
 			if (weathermapAccessible) {
-				if (sensorServerAvailable) {
+				if (sensorServerAvailable && client != null) {
+					System.out.println("WM accessible, ss available and client != null");
 					initWDwithSensorData(data);
-					data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
-					float temp = currentWeather.getWindInstance().getWindDegree();
-					if (Float.compare(Float.NaN, temp) == 0) {
-						data.setOwmWindDegree(0);
-					} else {
-						data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
-					}
-					data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
-					data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
-				} else {
+					System.out.println("completed init with sensor data");
 					initWDwithOWMData(currentWeather, data);
-					data.setLight(LIGHTDEFAULTVALUE);
-					data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
+					System.out.println("completed init with owm data");
+				} else {
+					System.out.println("WM accessible, ss unavailable");
+					initWDwithOWMData(currentWeather, data);
+					initWDwithSensorDefaults(data);
 				}
 			} else {
-				if (sensorServerAvailable) {
+				if (sensorServerAvailable && client != null) {
+					System.out.println("WM not accessible, ss available and client != null");
 					initWDwithSensorData(data);
-					data.setOwmDesc("N/A");
-					data.setOwmName("N/A");
-					data.setOwmWindSpeed(WSPEEDDEFAULTVALUE);
-					data.setOwmWindDegree(WDEGREEDEFAULTVALUE);
+					initWDwithOwmDefaults(data);
 				} else {
+					System.out.println("WM not accessible, ss unavailable");
 					initWDwithDefaultData(data);
 				}
 			}
+			System.out.println("Completed input of data");
 			return data;
+		}
+
+		private void initWDwithSensorDefaults(WeatherData data) {
+			data.setTemp(TEMPDEFAULTVALUE);
+			data.setPressure(PRESDEFAULTVALUE);
+			data.setHumidity(HUMDEFAULTVALUE);
+			data.setLight(LIGHTDEFAULTVALUE);
+			data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
+		}
+
+		private void initWDwithOwmDefaults(WeatherData data) {
+			data.setOwmTemp(TEMPDEFAULTVALUE);
+			data.setOwmPressure(PRESDEFAULTVALUE);
+			data.setOwmHumidity(HUMDEFAULTVALUE);
+			data.setOwmDesc("N/A");
+			data.setOwmName("N/A");
+			data.setOwmWindSpeed(WSPEEDDEFAULTVALUE);
+			data.setOwmWindDegree(WDEGREEDEFAULTVALUE);
 		}
 		
 		/**Sets all fields to default values, indicating that no sensor/OWM-data is present.
@@ -279,6 +354,9 @@ public class DataBaseManager {
 		 * @param data	WeatherData object to be initialized.
 		 */
 		private void initWDwithDefaultData(WeatherData data) {
+			data.setOwmTemp(TEMPDEFAULTVALUE);
+			data.setOwmPressure(PRESDEFAULTVALUE);
+			data.setOwmHumidity(HUMDEFAULTVALUE);
 			data.setTemp(TEMPDEFAULTVALUE);
 			data.setPressure(PRESDEFAULTVALUE);
 			data.setHumidity(HUMDEFAULTVALUE);
@@ -296,13 +374,18 @@ public class DataBaseManager {
 		 * @param data	WeatherData object to be initialized.
 		 */
 		private void initWDwithOWMData(CurrentWeather currentWeather, WeatherData data) {
-			data.setTemp(fahrenheitToCelsius(currentWeather.getMainInstance().getTemperature()));
-			data.setPressure(currentWeather.getMainInstance().getPressure());
-			data.setHumidity(currentWeather.getMainInstance().getHumidity());
-			data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
-			data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
-			data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
-			data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
+			try {
+				data.setOwmTemp(fahrenheitToCelsius(currentWeather.getMainInstance().getTemperature()));
+				data.setOwmPressure(currentWeather.getMainInstance().getPressure());
+				data.setOwmHumidity(currentWeather.getMainInstance().getHumidity());
+				data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
+				data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
+				data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
+				data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
+			} catch (NullPointerException e) {
+				System.out.println("Could not get main/weather instance of currentWeather.\n Should have thrown exception. Something's seriously wrong here.");
+				e.printStackTrace();
+			}
 		}
 
 		/**Initializes data with all the values which the connected sensor array provides. WindDegree, WeatherDescription and WeatherName are
@@ -312,10 +395,15 @@ public class DataBaseManager {
 		 */
 		private void initWDwithSensorData(WeatherData data) {
 			data.setTemp(client.getTemperature());
+			System.out.println("set temp");
 			data.setPressure(client.getPressure()/100);
+			System.out.println("set pres");
 			data.setHumidity(client.getHumidity());
+			System.out.println("set hum");
 			data.setSensorWindSpeed(client.getWindSpeed());
+			System.out.println("set ws");
 			data.setLight(client.getLight());
+			System.out.println("set light");
 		}
 		
 		
@@ -360,5 +448,78 @@ public class DataBaseManager {
 	public DataBaseManager(SensorClientInterface client, boolean sensorServerAvailable) {
 		collector = new DataCollector(client, sensorServerAvailable);
 		collector.start();
+		
+//		WebServerServer wss = new WebServerServer();
+//		wss.start();
 	}
+
+	private boolean isValidTimestamp(String timestamp) {
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		try {
+			format.parse(timestamp);
+			return true;
+		} catch (ParseException e) {
+			return false;
+		}
+	}
+	
+	private class WebServerServer extends Thread {
+		
+		public void run() {
+			try (
+				ServerSocket wsServer = new ServerSocket(WSS_PORT);
+				Socket wsClient = wsServer.accept();
+				OutputStreamWriter out = new OutputStreamWriter(wsClient.getOutputStream(), StandardCharsets.UTF_8);
+				BufferedReader in = new BufferedReader(new InputStreamReader(wsClient.getInputStream()));
+			) {
+				String input, output;
+				while((input = in.readLine()) != null) {
+					System.out.println("Processing WebServer request...");
+					String[] timestamps = input.split(";");
+					for (String timestamp : timestamps) {
+						if (!isValidTimestamp(timestamp)) System.out.println("Invalid timestamp detected."); break;
+					}
+					
+					registerDriver();
+					Connection conn = establishConnection();
+					System.out.println("Established DBConnection for WebServer.");
+					String query = "SELECT * FROM weatherdatalog WHERE timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
+					
+					try {
+						Statement statement = conn.createStatement();
+						ResultSet rs = statement.executeQuery(query);
+						System.out.println("Processed SQL query.");
+						JSONObject jretobj = new JSONObject();
+						while(rs.next()) {
+							JSONObject currentObject = new JSONObject();
+							currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
+							currentObject.put("temperature", rs.getDouble("temperature"));
+							currentObject.put("pressure", rs.getDouble("pressure"));
+							currentObject.put("humidity", rs.getDouble("humidity"));
+							currentObject.put("sensorwindspeed", rs.getDouble("sensorwindspeed"));
+							currentObject.put("owmwindspeed", rs.getDouble("owmwindspeed"));
+							currentObject.put("owmwinddegree", rs.getDouble("owmwinddegree"));
+							currentObject.put("light", rs.getDouble("light"));
+							currentObject.put("owmweathername", rs.getString("owmweathername"));
+							currentObject.put("owmweatherdesc", rs.getString("owmweatherdesc"));
+							
+							System.out.println("Created current object");
+							
+							jretobj.put(rs.getTimestamp("timestamp").toString(), currentObject);
+						}
+						out.write(jretobj.toString() + System.getProperty("line.separator"));
+						out.flush();
+						System.out.println("Sent JSON object");
+						
+					} catch (SQLException | JSONException e) {
+						e.printStackTrace();
+					}
+				}
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 }

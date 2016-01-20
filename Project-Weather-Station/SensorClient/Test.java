@@ -6,7 +6,7 @@ public class Test {
 	public static void main(String[] args) {
 		SensorClientInterface client = null;
 		try {
-			client = new SensorClient("deffi.thecuslink.com");
+			client = new SensorClient("192.168.2.123");
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

@@ -35,6 +35,8 @@ def handler():
                 conn.send('{0}\n'.format(data["humi"]))
             elif msg == "LUMI":
                 conn.send('{0}\n'.format(sensor3.lux()))
+            elif msg == "PING":
+                conn.send('{0}\n'.format("PONG"))
             else:
                 print "received message in conflict with our protocol"
     except Exception as e:
