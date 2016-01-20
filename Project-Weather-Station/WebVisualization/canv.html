@@ -103,10 +103,10 @@
 					text: 'Temperature'
 				},
 				axisX: {
-					title: 'Some Values'
+					title: 'Time'
 				},
 				axisY: {
-					title: 'Units'
+					title: '°C'
 				},
 				data: [{
 					type: 'spline',
@@ -115,13 +115,13 @@
 			}
 		var options2 = {
 				title: {
-					text: 'Humidity'
+					text: 'Relative Humidity'
 				},
 				axisX: {
-					title: 'Some Values'
+					title: 'Time'
 				},
 				axisY: {
-					title: 'Units'
+					title: '%'
 				},
 				data: [{
 					type: 'spline',
@@ -130,13 +130,28 @@
 			}
 		var options3 = {
 				title: {
+					text: 'Pressure'
+				},
+				axisX: {
+					title: 'Time'
+				},
+				axisY: {
+					title: 'Pascal'
+				},
+				data: [{
+					type: 'spline',
+					dataPoints: dps
+				}]
+			}
+		var options4 = {
+				title: {
 					text: 'Wind Speed'
 				},
 				axisX: {
-					title: 'Some Values'
+					title: 'Time'
 				},
 				axisY: {
-					title: 'Units'
+					title: 'm/s'
 				},
 				data: [{
 					type: 'spline',
@@ -144,9 +159,21 @@
 				}]
 			}
 		var interval;
-		function createAndAppendSelect(){
+		
+		function createTypeSelectors() {
+			var selectsource = '<select class="selectType">'+
+						'<option value="0" selected="selected">Temperature</option>'+
+						'<option value="1">Humidity</option>'+
+						'<option value="2">Pressure</option>'+
+						'<option value="3">Windspeed</option>'+
+					'</select>';
+			$(selectsource).insertBefore("#chart");
+		
+		
+		}
+		function createMonthSelectors(){
 			var selectsource = '<select class="selectMonth">'+
-						'<option value="0">January</option>'+
+						'<option value="0" selected="selected">January</option>'+
 						'<option value="1">February</option>'+
 						'<option value="2">March</option>'+
 						'<option value="3">April</option>'+
@@ -159,42 +186,78 @@
 						'<option value="10">November</option>'+
 						'<option value="11">December</option>'+
 					'</select>';
-			$(selectsource).insertBefore("#chart")
+			$(selectsource).insertBefore("#chart");
 		}
 		function createYearSelectors() {
-			var selectsource = '<select class="selectYear1">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
+			var selectsource = '<select class="selectYear">'+
+						'<option value="2014">2014</option>'+
+						'<option value="2015">2015</option>'+
+						'<option value="2016" selected="selected">2016</option>'+
 					'</select>';
-			$(selectsource).insertBefore(".select1");
+			$(selectsource).insertBefore("#chart");
 		}
-		function createDaySelectors() {
-			var selectsource = '<select class="selectYear1">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select1");
+		function createDaySelectors(afterChange) {
+			var countdays = daysInMonth(parseInt($(".selectMonth").val()) + 1, $(".selectYear").val());
+			var selectsource = '<select class="selectDay1">';
+			for (var i = 1; i <= countdays; i++) {
+				selectsource += '<option value="' + i + '">' + i + '</option>';
+			}
+			selectsource += '</select>';
+			if(!afterChange) $(selectsource).insertBefore("#chart");
+			else $(".selectDay1").replaceWith(selectsource);
+			
+			selectsource = '<select class="selectDay2">';
+			for (var i = 1; i <= countdays; i++) {
+				selectsource += '<option value="' + i + '">' + i + '</option>';
+			}
+			if(!afterChange) $(selectsource).insertBefore("#chart");
+			else $(".selectDay2").replaceWith(selectsource);
 		}
 		
 		$(document).ready(function(){
 			// make selects
-			createAndAppendSelect();
-			
+			createTypeSelectors();
 			createYearSelectors();
+			createMonthSelectors();
+			createDaySelectors(false);
 			
-			createDaySelectors();
+			
+			
 			
 			//create chart
-			var chart = new CanvasJS.Chart('chart1', options1);
+			var chart = new CanvasJS.Chart('chart', options1);
 			// render chart
 			chart.render();
 			
 			
 			// apply event handlers to buttons
+			
+			$( ".selectDay1" ).change(function() {
+				$('#msgBar').text("selectDay1 changed: " + $(".selectMonth").val());
+				createDaySelectors(true);
+			});
+			
+			$( ".selectDay2" ).change(function() {
+				$('#msgBar').text("selectDay2 changed: " + $(".selectMonth").val());
+				createDaySelectors(true);
+			});
+			
 			$( ".selectMonth" ).change(function() {
 				$('#msgBar').text("selectMonth changed: " + $(".selectMonth").val());
+				createDaySelectors(true);
+			});
+			
+			$( ".selectYear" ).change(function() {
+				$('#msgBar').text("selectYear changed: " + $(".selectYear").val());
+				createDaySelectors(true);
+			});
+			
+			$( ".selectType" ).change(function() {
+				if($( ".selectType" ).val() == 0) chart = new CanvasJS.Chart('chart', options1);
+				else if($( ".selectType" ).val() == 1) chart = new CanvasJS.Chart('chart', options2);
+				else if($( ".selectType" ).val() == 2) chart = new CanvasJS.Chart('chart', options3);
+				else if($( ".selectType" ).val() == 3) chart = new CanvasJS.Chart('chart', options4);
+				chart.render();
 			});
 			
 			$('#reset-btn').click(function(event){
