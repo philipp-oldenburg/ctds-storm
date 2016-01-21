@@ -26,7 +26,7 @@ public class MockWebServer extends Thread{
 		    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		) {
 			Thread.sleep(1000);
-			out.println("2016-01-21 10:00:00;2016-01-21 12:10:50;TRUE;owmtemperature;owmpressure;owmhumidity;owmwindspeed");
+			out.println("2016-01-21 10:00:00;2016-01-21 12:10:50;FALSE;owmtemperature;owmpressure;owmhumidity;owmwindspeed");
 			System.out.println("Sent Request");
 			
 			String input;

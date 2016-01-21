@@ -42,32 +42,37 @@ public class Main {
 		}
 
 		boolean sensorServerAvailable = true;
-		if (checkIfStringIsIPAddress(ipAddress)) {
-			try {
-				System.out.println("Looking for sensor server.");
-				client = new SensorClient(ipAddress);
-			} catch (UnknownHostException e){
-				if (requireSensorServerAvailable) {	
-					System.out.println("Could not find host:");
-					e.printStackTrace();
-					client = standByForIP(client);
-				} else {
-					System.out.println("Could not find host.");
-					sensorServerAvailable = false;
+		
+		if (requireSensorServerAvailable) {
+			if (checkIfStringIsIPAddress(ipAddress)) {
+				try {
+					System.out.println("Looking for sensor server.");
+					client = new SensorClient(ipAddress);
+				} catch (UnknownHostException e) {
+					if (requireSensorServerAvailable) {
+						System.out.println("Could not find host:");
+						e.printStackTrace();
+						client = standByForIP(client);
+					} else {
+						System.out.println("Could not find host.");
+						sensorServerAvailable = false;
+					}
+				} catch (IOException e) {
+					if (requireSensorServerAvailable) {
+						System.out.println("Unable to connect to SensorServer:");
+						e.printStackTrace();
+						client = standByForIP(client);
+					} else {
+						System.out.println("Unable to connect to SensorServer.");
+						sensorServerAvailable = false;
+					}
 				}
-			} catch (IOException e) {
-				if (requireSensorServerAvailable) {	
-					System.out.println("Unable to connect to SensorServer:");
-					e.printStackTrace();
-					client = standByForIP(client);
-				} else {
-					System.out.println("Unable to connect to SensorServer.");
-					sensorServerAvailable = false;
-				}
-			}
-		} else  {
-			System.out.println("Given Parameter is not a valid IP address.");
-			client = standByForIP(client);
+			} else {
+				System.out.println("Given Parameter is not a valid IP address.");
+				client = standByForIP(client);
+			} 
+		} else {
+			sensorServerAvailable = false;
 		}
 		DataBaseManager dbMan = new DataBaseManager(client, sensorServerAvailable);
 		System.out.println("created DBMan");

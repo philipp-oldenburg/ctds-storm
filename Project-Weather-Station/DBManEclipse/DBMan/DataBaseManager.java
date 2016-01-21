@@ -570,7 +570,7 @@ public class DataBaseManager {
 						registerDriver();
 						Connection conn = establishConnection();
 						System.out.println("Established DBConnection for WebServer.");
-						String query = "SELECT ";
+						String query = "SELECT timestamp, ";
 						if(columns != null) {
 							for (int i=0; i < columns.length-1; i++) {
 								query += columns[i] + ", ";
@@ -578,7 +578,6 @@ public class DataBaseManager {
 							query += columns[columns.length-1];
 						}
 						query += " FROM weatherdatalog WHERE timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
-						
 						try {
 							Statement statement = conn.createStatement();
 							ResultSet rs = statement.executeQuery(query);
@@ -588,7 +587,6 @@ public class DataBaseManager {
 							String[] prevVals = new String[columns.length];
 							Arrays.fill(prevVals, "");
 							while(rs.next()) {
-								
 								if (distinct) {
 									boolean changed = false;
 									for (int i = 0; i < prevVals.length; i++) {
@@ -598,11 +596,12 @@ public class DataBaseManager {
 											prevVals[i] = tmp;
 										}
 									}
-									if (!changed)
-										continue;
+									if (!changed) continue;
 								}
+//								System.out.println(rs.getTime("timestamp").toString());
+								JSONObject currentObject;
 								
-								JSONObject currentObject = initCurrentJSONObjectPicky(columns, prevVals, rs);
+								currentObject = initCurrentJSONObjectPicky(columns, prevVals, rs, distinct);
 								
 								jretobj.put(Integer.toString(counter), currentObject);
 								counter++;
@@ -657,10 +656,23 @@ public class DataBaseManager {
 						}
 					}
 					
-					private JSONObject initCurrentJSONObjectPicky(String[] columns, String[] prevVals, ResultSet rs) throws JSONException, SQLException {
+					private JSONObject initCurrentJSONObjectPicky(String[] columns, String[] prevVals, ResultSet rs, boolean distinct) throws JSONException, SQLException {
 						JSONObject currentObject = new JSONObject();
-						for (int i=0; i < columns.length; i++) {
-							currentObject.put(columns[i], prevVals[i]);
+						if (distinct) {
+							for (int i=0; i < columns.length; i++) {
+								currentObject.put(columns[i], prevVals[i]);
+							}
+						} else {
+							for (int i=0; i < columns.length; i++) {
+								if (columns[i].equals("owmweathername") || columns[i].equals("owmweatherdesc")) {
+									currentObject.put(columns[i], rs.getString(columns[i]));
+								} else if (columns[i].equals("timestamp")) {
+								} else if (columns[i].equals("id")) {
+									currentObject.put(columns[i], rs.getDouble(columns[i]));
+								} else {
+									currentObject.put(columns[i], rs.getDouble(columns[i]));
+								}
+							}
 						}
 						currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
 						return currentObject;
