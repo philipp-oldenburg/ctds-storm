@@ -3,7 +3,8 @@
 	if (!$fp) {
 		echo "$errstr ($errno)<br />\n";
 	} else {
-		$out = "2016-01-20 13:42:32;2016-01-20 13:46:40\n";
+		$out = $_POST["timestamp1"].";".$_POST["timestamp2"]."\n";
+		//echo $out;
 		fwrite($fp, $out);
 		echo fgets($fp);
 		fclose($fp);
