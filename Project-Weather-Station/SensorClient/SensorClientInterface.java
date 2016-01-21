@@ -38,6 +38,8 @@ public interface SensorClientInterface {
 	 */
 	double getWindSpeed();
 	
+	public boolean ping();
+	
 	/**Returns IP address of connected SensorServer.
 	 * 
 	 * @return ^

@@ -32,22 +32,6 @@
 					<h3 class="panel-title">Panel Title</h3>
 				</div><!-- .panel-heading -->
 				<div class="panel-body">
-					<div class="btn-toolbar" role="toolbar">
-						<div class="btn-group" role="group">
-							<button id="reset-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
-							</button>
-							<button id="play-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-play" aria-hidden="true"></span>
-							</button>
-							<button id="step-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-							</button>
-							<button id="stop-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-stop" aria-hidden="true"></span>
-							</button>
-						</div><!-- .btn-group -->
-					</div><!-- .btn-toolbar -->
 					<div id="chart" style="width:80%;height:500px;"></div>
 					<div id="msgBar" class="well">
 					
@@ -75,38 +59,29 @@
 		function daysInMonth(month,year) {
 			return new Date(year, month, 0).getDate();
 		}
-		var srcDps = [{x: 1, y: 10}, {x: 2, y: 10}, {x: 3, y: 10}, {x: 4, y: 10}, {x: 5, y: 10}];   //dataPoints. 
+		var srcDps = [];   //dataPoints. 
 		var dps = srcDps.slice();
 		var xVal = dps.length + 1;
 		var srcXVal = srcDps.length + 1;
 		var yVal = 10;
 		var updateInterval = 1000; //ms
 		var doUpdate = true;
+		var obj;
+		var graph;
 		
 		var date = new Date();
 		var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
 		var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-		
-		var updateChart = function(chart){
-			if(doUpdate){
-				yVal = yVal + Math.round(5+Math.random() *(-5-5));
-				options.data[0].dataPoints.push({x: xVal, y:yVal});
-				if(dps.length > 20){
-					options.data[0].dataPoints.shift();
-				}
-				xVal++;
-				chart.render();
-			}
-		}
+
 		var options1 = {
 				title: {
 					text: 'Temperature'
 				},
 				axisX: {
-					title: 'Some Values'
+					title: 'Time'
 				},
 				axisY: {
-					title: 'Units'
+					title: '°C'
 				},
 				data: [{
 					type: 'spline',
@@ -115,13 +90,13 @@
 			}
 		var options2 = {
 				title: {
-					text: 'Humidity'
+					text: 'Relative Humidity'
 				},
 				axisX: {
-					title: 'Some Values'
+					title: 'Time'
 				},
 				axisY: {
-					title: 'Units'
+					title: '%'
 				},
 				data: [{
 					type: 'spline',
@@ -130,13 +105,28 @@
 			}
 		var options3 = {
 				title: {
+					text: 'Pressure'
+				},
+				axisX: {
+					title: 'Time'
+				},
+				axisY: {
+					title: 'Pascal'
+				},
+				data: [{
+					type: 'spline',
+					dataPoints: dps
+				}]
+			}
+		var options4 = {
+				title: {
 					text: 'Wind Speed'
 				},
 				axisX: {
-					title: 'Some Values'
+					title: 'Time'
 				},
 				axisY: {
-					title: 'Units'
+					title: 'm/s'
 				},
 				data: [{
 					type: 'spline',
@@ -144,9 +134,45 @@
 				}]
 			}
 		var interval;
-		function createAndAppendSelect(){
+		
+		function updateGraph() {
+			var values = $(this).serialize();
+			
+			request = $.ajax({
+				url: "/datagatherer.php",
+				type: "post",
+				data: values
+			});
+			// Callback handler that will be called on success
+			request.done(function (response, textStatus, jqXHR){
+				// Log a message to the console
+				obj = JSON.parse(response);
+				options1.data[0].dataPoints = [];
+				for (var i = 0; i < obj.length; i++) {
+					var day = Number(obj[i].timestamp.substring(8, 10));
+					var hour = Number(obj[i].timestamp.substring(11, 13));
+					var min = Number(obj[i].timestamp.substring(14, 16));
+					var sec = Number(obj[i].timestamp.substring(17, 19));
+					if(obj[i].owmtemperature != -300) options1.data[0].dataPoints.push({x: day + hour/24 + min/1440 + sec/86400, y: obj[i].owmtemperature});
+				}
+				graph.render();
+			});
+		}
+		
+		function createTypeSelectors() {
+			var selectsource = '<select class="selectType">'+
+						'<option value="0" selected="selected">Temperature</option>'+
+						'<option value="1">Humidity</option>'+
+						'<option value="2">Pressure</option>'+
+						'<option value="3">Windspeed</option>'+
+					'</select>';
+			$(selectsource).insertBefore("#chart");
+		
+		
+		}
+		function createMonthSelectors(){
 			var selectsource = '<select class="selectMonth">'+
-						'<option value="0">January</option>'+
+						'<option value="0" selected="selected">January</option>'+
 						'<option value="1">February</option>'+
 						'<option value="2">March</option>'+
 						'<option value="3">April</option>'+
@@ -159,61 +185,82 @@
 						'<option value="10">November</option>'+
 						'<option value="11">December</option>'+
 					'</select>';
-			$(selectsource).insertBefore("#chart")
+			$(selectsource).insertBefore("#chart");
 		}
 		function createYearSelectors() {
-			var selectsource = '<select class="selectYear1">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
+			var selectsource = '<select class="selectYear">'+
+						'<option value="2014">2014</option>'+
+						'<option value="2015">2015</option>'+
+						'<option value="2016" selected="selected">2016</option>'+
 					'</select>';
-			$(selectsource).insertBefore(".select1");
+			$(selectsource).insertBefore("#chart");
 		}
-		function createDaySelectors() {
-			var selectsource = '<select class="selectYear1">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select1");
+		function createDaySelectors(afterChange) {
+			var countdays = daysInMonth(parseInt($(".selectMonth").val()) + 1, $(".selectYear").val());
+			var selectsource = '<select class="selectDay1">';
+			for (var i = 1; i <= countdays; i++) {
+				selectsource += '<option value="' + i + '">' + i + '</option>';
+			}
+			selectsource += '</select>';
+			if(!afterChange) $(selectsource).insertBefore("#chart");
+			else $(".selectDay1").replaceWith(selectsource);
+			
+			selectsource = '<select class="selectDay2">';
+			for (var i = 1; i <= countdays; i++) {
+				selectsource += '<option value="' + i + '">' + i + '</option>';
+			}
+			if(!afterChange) $(selectsource).insertBefore("#chart");
+			else $(".selectDay2").replaceWith(selectsource);
 		}
 		
 		$(document).ready(function(){
 			// make selects
-			createAndAppendSelect();
-			
+			createTypeSelectors();
 			createYearSelectors();
+			createMonthSelectors();
+			createDaySelectors(false);
 			
-			createDaySelectors();
+			
+			
 			
 			//create chart
-			var chart = new CanvasJS.Chart('chart1', options1);
+			graph = new CanvasJS.Chart('chart', options1);
+			options1.data[0].dataPoints.push({x: 1, y: 2});
+			options1.data[0].dataPoints = [];
+			options1.data[0].dataPoints.push({x: 2, y: 4});
 			// render chart
-			chart.render();
+			graph.render();
 			
 			
 			// apply event handlers to buttons
-			$( ".selectMonth" ).change(function() {
-				$('#msgBar').text("selectMonth changed: " + $(".selectMonth").val());
+			
+			$( ".selectDay1" ).change(function() {
+				createDaySelectors(true);
+				updateGraph();
 			});
 			
-			$('#reset-btn').click(function(event){
-				$('#msgBar').text("Reset pressed");
-				options1.data[0].dataPoints = srcDps.slice();
-				xVal = srcXVal;
-				chart.render();
+			$( ".selectDay2" ).change(function() {
+				createDaySelectors(true);
+				updateGraph();
 			});
-			$('#play-btn').click(function(event){
-				$('#msgBar').text("Play pressed");
-				interval = setInterval(function(){updateChart(chart)},updateInterval);
+			
+			$( ".selectMonth" ).change(function() {
+				createDaySelectors(true);
+				updateGraph();
 			});
-			$('#step-btn').click(function(event){
-				$('#msgBar').text("Step pressed");
-				updateChart(chart);
+			
+			$( ".selectYear" ).change(function() {
+				createDaySelectors(true);
+				updateGraph();
 			});
-			$('#stop-btn').click(function(event){
-				$('#msgBar').text('Stop pressed');
-				clearInterval(interval);
+			
+			$( ".selectType" ).change(function() {
+				if($( ".selectType" ).val() == 0) chart = new CanvasJS.Chart('chart', options1);
+				else if($( ".selectType" ).val() == 1) chart = new CanvasJS.Chart('chart', options2);
+				else if($( ".selectType" ).val() == 2) chart = new CanvasJS.Chart('chart', options3);
+				else if($( ".selectType" ).val() == 3) chart = new CanvasJS.Chart('chart', options4);
+				graph.render();
+				updateGraph();
 			});
 		});
 	</script>
