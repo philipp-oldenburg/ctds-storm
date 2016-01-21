@@ -1,0 +1,33 @@
+Rain,light intensity shower rain
+Rain,moderate rain
+Rain,light rain
+Rain,shower rain
+Clouds,scattered clouds
+Rain,heavy intensity rain
+Clouds,broken clouds
+Mist,mist
+Fog,fog
+Thunderstorm,thunderstorm with light rain
+Drizzle,light intensity drizzle
+Drizzle,drizzle
+Clouds,overcast clouds
+Snow,shower sleet
+Clear,clear sky
+Snow,light snow
+Snow,snow
+Snow,light shower snow
+Snow,shower snow
+
+
+Simplified
+0 Clear				1364
+1 Rain				15977
+2 Snow				1022
+3 Clouds			5124
+4 Mist				872
+5 Fog				952
+6 Drizzle			363
+7 Thunderstorm		86
+
+
+Temperature, Pressure, Humidity, Windspeed
