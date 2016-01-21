@@ -2,7 +2,6 @@ package test;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import com.jmatio.io.MatFileReader;
@@ -62,7 +61,7 @@ public class Test2 {
 		}
 		System.out.println(clusterList.size());
 		
-		double[] testv = {5.37222120496962, 996, 87, 5.61999988555908};
+		double[] testv = {5.37222120496962, 996, 87, 5.61999988555908, 0, 0, 0, 0};
 		System.out.println(Statistics.maximumLikelihood(clusterList, testv));
 //		------------------------------------------------------------------------------------------------------------
 		
@@ -79,15 +78,14 @@ public class Test2 {
 			int fog = 0;
 			int drizzle = 0;
 			int thunderstorm = 0;
+			int dim = data[0].length-1;
 			for (int i = 0; i < data.length; i++) {
-				double[] test = new double[4];
-				test[0] = data[i][0];
-				test[1] = data[i][1];
-				test[2] = data[i][2];
-				test[3] = data[i][3];
-				double truth = data[i][4];
+				double[] test = new double[dim];
+				for (int j = 0; j < dim; j++) {
+					test[j] = data[i][j];
+				}
+				double truth = data[i][dim];
 				String classification = Statistics.maximumLikelihoodPrior(clusterList, test);
-				System.out.println(classification);
 				switch (classification) {
 				case "Clear":
 					clear++;
@@ -135,8 +133,7 @@ public class Test2 {
 			System.out.println("Fog: " + fog);
 			System.out.println("Drizzle: " + drizzle);
 			System.out.println("Thunderstorm: " + thunderstorm);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
