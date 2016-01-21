@@ -32,22 +32,6 @@
 					<h3 class="panel-title">Panel Title</h3>
 				</div><!-- .panel-heading -->
 				<div class="panel-body">
-					<div class="btn-toolbar" role="toolbar">
-						<div class="btn-group" role="group">
-							<button id="reset-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
-							</button>
-							<button id="play-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-play" aria-hidden="true"></span>
-							</button>
-							<button id="step-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-							</button>
-							<button id="stop-btn" class="btn btn-default" type="button">
-								<span class="glyphicon glyphicon-stop" aria-hidden="true"></span>
-							</button>
-						</div><!-- .btn-group -->
-					</div><!-- .btn-toolbar -->
 					<div id="chart" style="width:80%;height:500px;"></div>
 					<div id="msgBar" class="well">
 					
@@ -75,29 +59,20 @@
 		function daysInMonth(month,year) {
 			return new Date(year, month, 0).getDate();
 		}
-		var srcDps = [{x: 1, y: 10}, {x: 2, y: 10}, {x: 3, y: 10}, {x: 4, y: 10}, {x: 5, y: 10}];   //dataPoints. 
+		var srcDps = [];   //dataPoints. 
 		var dps = srcDps.slice();
 		var xVal = dps.length + 1;
 		var srcXVal = srcDps.length + 1;
 		var yVal = 10;
 		var updateInterval = 1000; //ms
 		var doUpdate = true;
+		var obj;
+		var graph;
 		
 		var date = new Date();
 		var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
 		var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-		
-		var updateChart = function(chart){
-			if(doUpdate){
-				yVal = yVal + Math.round(5+Math.random() *(-5-5));
-				options.data[0].dataPoints.push({x: xVal, y:yVal});
-				if(dps.length > 20){
-					options.data[0].dataPoints.shift();
-				}
-				xVal++;
-				chart.render();
-			}
-		}
+
 		var options1 = {
 				title: {
 					text: 'Temperature'
@@ -159,6 +134,30 @@
 				}]
 			}
 		var interval;
+		
+		function updateGraph() {
+			var values = $(this).serialize();
+			
+			request = $.ajax({
+				url: "/datagatherer.php",
+				type: "post",
+				data: values
+			});
+			// Callback handler that will be called on success
+			request.done(function (response, textStatus, jqXHR){
+				// Log a message to the console
+				obj = JSON.parse(response);
+				options1.data[0].dataPoints = [];
+				for (var i = 0; i < obj.length; i++) {
+					var day = Number(obj[i].timestamp.substring(8, 10));
+					var hour = Number(obj[i].timestamp.substring(11, 13));
+					var min = Number(obj[i].timestamp.substring(14, 16));
+					var sec = Number(obj[i].timestamp.substring(17, 19));
+					if(obj[i].owmtemperature != -300) options1.data[0].dataPoints.push({x: day + hour/24 + min/1440 + sec/86400, y: obj[i].owmtemperature});
+				}
+				graph.render();
+			});
+		}
 		
 		function createTypeSelectors() {
 			var selectsource = '<select class="selectType">'+
@@ -225,31 +224,34 @@
 			
 			
 			//create chart
-			var chart = new CanvasJS.Chart('chart', options1);
+			graph = new CanvasJS.Chart('chart', options1);
+			options1.data[0].dataPoints.push({x: 1, y: 2});
+			options1.data[0].dataPoints = [];
+			options1.data[0].dataPoints.push({x: 2, y: 4});
 			// render chart
-			chart.render();
+			graph.render();
 			
 			
 			// apply event handlers to buttons
 			
 			$( ".selectDay1" ).change(function() {
-				$('#msgBar').text("selectDay1 changed: " + $(".selectMonth").val());
 				createDaySelectors(true);
+				updateGraph();
 			});
 			
 			$( ".selectDay2" ).change(function() {
-				$('#msgBar').text("selectDay2 changed: " + $(".selectMonth").val());
 				createDaySelectors(true);
+				updateGraph();
 			});
 			
 			$( ".selectMonth" ).change(function() {
-				$('#msgBar').text("selectMonth changed: " + $(".selectMonth").val());
 				createDaySelectors(true);
+				updateGraph();
 			});
 			
 			$( ".selectYear" ).change(function() {
-				$('#msgBar').text("selectYear changed: " + $(".selectYear").val());
 				createDaySelectors(true);
+				updateGraph();
 			});
 			
 			$( ".selectType" ).change(function() {
@@ -257,26 +259,8 @@
 				else if($( ".selectType" ).val() == 1) chart = new CanvasJS.Chart('chart', options2);
 				else if($( ".selectType" ).val() == 2) chart = new CanvasJS.Chart('chart', options3);
 				else if($( ".selectType" ).val() == 3) chart = new CanvasJS.Chart('chart', options4);
-				chart.render();
-			});
-			
-			$('#reset-btn').click(function(event){
-				$('#msgBar').text("Reset pressed");
-				options1.data[0].dataPoints = srcDps.slice();
-				xVal = srcXVal;
-				chart.render();
-			});
-			$('#play-btn').click(function(event){
-				$('#msgBar').text("Play pressed");
-				interval = setInterval(function(){updateChart(chart)},updateInterval);
-			});
-			$('#step-btn').click(function(event){
-				$('#msgBar').text("Step pressed");
-				updateChart(chart);
-			});
-			$('#stop-btn').click(function(event){
-				$('#msgBar').text('Stop pressed');
-				clearInterval(interval);
+				graph.render();
+				updateGraph();
 			});
 		});
 	</script>
