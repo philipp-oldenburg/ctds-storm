@@ -5,14 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>CanvasJS - Testing CanvasJS</title>
+    <title>Weather Station</title>
 
     <!-- Bootstrap -->
     <!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
-    
+    <!-- own css file -->
+	<link href="ourstyle.css" rel="stylesheet">
 	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -34,7 +35,7 @@
 				<div class="panel-body">
 					<div id="chart" style="width:80%;height:500px;"></div>
 					<div id="msgBar" class="well">
-					
+						<h3>Temp: <span class = "currTemp"></span>°C, Hum: <span class = "currHumi"></span>%, Press: <span class = "currPress"></span>Pa, Wind Speed: <span class = "currWind"></span>m/s <input class="refresh" type=button value="Refresh" onClick="getCurrentWeatherData()"></h3>
 					</div><!-- #msgBar.well -->
 				</div><!-- .panel-body -->
 			</div><!-- .panel panel-default -->
@@ -68,12 +69,19 @@
 		var doUpdate = true;
 		var obj;
 		var graph;
+		var currWeather;
 		
 		var date = new Date();
 		var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
 		var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
-		var options1 = {
+		function pad(num, size) {
+			var s = num+"";
+			while (s.length < size) s = "0" + s;
+			return s;
+		}
+		
+		var options = {
 				title: {
 					text: 'Temperature'
 				},
@@ -81,79 +89,62 @@
 					title: 'Time'
 				},
 				axisY: {
-					title: '°C'
+					title: 'Temperature[°C]'
 				},
 				data: [{
 					type: 'spline',
 					dataPoints: dps
 				}]
 			}
-		var options2 = {
-				title: {
-					text: 'Relative Humidity'
-				},
-				axisX: {
-					title: 'Time'
-				},
-				axisY: {
-					title: '%'
-				},
-				data: [{
-					type: 'spline',
-					dataPoints: dps
-				}]
-			}
-		var options3 = {
-				title: {
-					text: 'Pressure'
-				},
-				axisX: {
-					title: 'Time'
-				},
-				axisY: {
-					title: 'Pascal'
-				},
-				data: [{
-					type: 'spline',
-					dataPoints: dps
-				}]
-			}
-		var options4 = {
-				title: {
-					text: 'Wind Speed'
-				},
-				axisX: {
-					title: 'Time'
-				},
-				axisY: {
-					title: 'm/s'
-				},
-				data: [{
-					type: 'spline',
-					dataPoints: dps
-				}]
-			}
+		
 		var interval;
 		
-		function updateGraph() {
-			var values = $(this).serialize();
+		function getCurrentWeatherData() {
+			request = $.ajax({
+				url: "/currentdatagatherer.php",
+				type: "post",
+				data: "",
+			});
+			request.done(function (response, textStatus, jqXHR){
+				// Log a message to the console
+				currWeather = JSON.parse(response);
+				$(".currTemp").html(parseFloat(currWeather[0].owmtemperature).toFixed(2));
+				$(".currHumi").html(parseFloat(currWeather[0].owmhumidity).toFixed(2));
+				$(".currPress").html(parseFloat(currWeather[0].owmpressure).toFixed(2));
+				$(".currWind").html(parseFloat(currWeather[0].owmwindspeed).toFixed(2));
+			});
 			
+		}
+		
+		function updateGraph() {
+			var timestamp1 = $(".selectYear").val() + "-" + $(".selectMonth").val() + "-" + $(".selectDay1").val() + " 00:00:00";
+			var timestamp2 = $(".selectYear").val() + "-" + $(".selectMonth").val() + "-" + $(".selectDay2").val() + " 23:59:59";
+			var data = 
 			request = $.ajax({
 				url: "/datagatherer.php",
 				type: "post",
-				data: values
+				data: ("timestamp1=" + timestamp1 + "&timestamp2=" + timestamp2),
 			});
+			console.log("requested:" + timestamp1 + timestamp2);
 			// Callback handler that will be called on success
 			request.done(function (response, textStatus, jqXHR){
 				// Log a message to the console
 				obj = JSON.parse(response);
-				options1.data[0].dataPoints = [];
+				console.log("recieved: " + obj.length);
+				options.data[0].dataPoints = [];
 				for (var i = 0; i < obj.length; i++) {
 					var day = Number(obj[i].timestamp.substring(8, 10));
 					var hour = Number(obj[i].timestamp.substring(11, 13));
 					var min = Number(obj[i].timestamp.substring(14, 16));
 					var sec = Number(obj[i].timestamp.substring(17, 19));
-					if(obj[i].owmtemperature != -300) options1.data[0].dataPoints.push({x: day + hour/24 + min/1440 + sec/86400, y: obj[i].owmtemperature});
+					var y = 0;
+					if (obj[i].owmtemperature != -300) {
+						if($(".selectType").val() == 0) y = obj[i].owmtemperature;
+						else if($(".selectType").val() == 1) y = obj[i].owmhumidity;
+						else if($(".selectType").val() == 2) y = obj[i].owmpressure;
+						else if($(".selectType").val() == 3) y = obj[i].owmwindspeed;
+						options.data[0].dataPoints.push({x: day + hour/24 + min/1440 + sec/86400, y: y});
+					}
 				}
 				graph.render();
 			});
@@ -172,18 +163,18 @@
 		}
 		function createMonthSelectors(){
 			var selectsource = '<select class="selectMonth">'+
-						'<option value="0" selected="selected">January</option>'+
-						'<option value="1">February</option>'+
-						'<option value="2">March</option>'+
-						'<option value="3">April</option>'+
-						'<option value="4">May</option>'+
-						'<option value="5">June</option>'+
-						'<option value="6">July</option>'+
-						'<option value="7">August</option>'+
-						'<option value="8">September</option>'+
-						'<option value="9">October</option>'+
-						'<option value="10">November</option>'+
-						'<option value="11">December</option>'+
+						'<option value="01" selected="selected">January</option>'+
+						'<option value="02">February</option>'+
+						'<option value="03">March</option>'+
+						'<option value="04">April</option>'+
+						'<option value="05">May</option>'+
+						'<option value="06">June</option>'+
+						'<option value="07">July</option>'+
+						'<option value="08">August</option>'+
+						'<option value="09">September</option>'+
+						'<option value="10">October</option>'+
+						'<option value="11">November</option>'+
+						'<option value="12">December</option>'+
 					'</select>';
 			$(selectsource).insertBefore("#chart");
 		}
@@ -199,7 +190,7 @@
 			var countdays = daysInMonth(parseInt($(".selectMonth").val()) + 1, $(".selectYear").val());
 			var selectsource = '<select class="selectDay1">';
 			for (var i = 1; i <= countdays; i++) {
-				selectsource += '<option value="' + i + '">' + i + '</option>';
+				selectsource += '<option value="' + pad(i, 2) + '">' + i + '</option>';
 			}
 			selectsource += '</select>';
 			if(!afterChange) $(selectsource).insertBefore("#chart");
@@ -207,8 +198,9 @@
 			
 			selectsource = '<select class="selectDay2">';
 			for (var i = 1; i <= countdays; i++) {
-				selectsource += '<option value="' + i + '">' + i + '</option>';
+				selectsource += '<option value="' + pad(i, 2) + '">' + i + '</option>';
 			}
+			selectsource += '</select>';
 			if(!afterChange) $(selectsource).insertBefore("#chart");
 			else $(".selectDay2").replaceWith(selectsource);
 		}
@@ -224,23 +216,30 @@
 			
 			
 			//create chart
-			graph = new CanvasJS.Chart('chart', options1);
-			options1.data[0].dataPoints.push({x: 1, y: 2});
-			options1.data[0].dataPoints = [];
-			options1.data[0].dataPoints.push({x: 2, y: 4});
-			// render chart
-			graph.render();
+			graph = new CanvasJS.Chart('chart', options);
+			updateGraph();
+			getCurrentWeatherData();
 			
 			
 			// apply event handlers to buttons
 			
 			$( ".selectDay1" ).change(function() {
-				createDaySelectors(true);
+				var countdays = daysInMonth(parseInt($(".selectMonth").val()) + 1, $(".selectYear").val());
+				var selectsource = '<select class="selectDay2">';
+				for (var i = parseInt($(".selectDay1").val()); i <= countdays; i++) {
+					selectsource += '<option value="' + i + '">' + i + '</option>';
+				}
+				selectsource += '</select>';
+				$(".selectDay2").replaceWith(selectsource);
+				$( ".selectDay2" ).change(function() {
+				console.log("test");
+				updateGraph();
+			});
 				updateGraph();
 			});
 			
 			$( ".selectDay2" ).change(function() {
-				createDaySelectors(true);
+				console.log("test");
 				updateGraph();
 			});
 			
@@ -255,11 +254,26 @@
 			});
 			
 			$( ".selectType" ).change(function() {
-				if($( ".selectType" ).val() == 0) chart = new CanvasJS.Chart('chart', options1);
-				else if($( ".selectType" ).val() == 1) chart = new CanvasJS.Chart('chart', options2);
-				else if($( ".selectType" ).val() == 2) chart = new CanvasJS.Chart('chart', options3);
-				else if($( ".selectType" ).val() == 3) chart = new CanvasJS.Chart('chart', options4);
-				graph.render();
+				if($( ".selectType" ).val() == 0) {
+					options.title.text = "Temperature";
+					options.axisX.title = "Time";
+					options.axisY.title = "Temperature[°C]";
+				}
+				else if($( ".selectType" ).val() == 1) {
+					options.title.text = "Relative Humidity";
+					options.axisX.title = "Time";
+					options.axisY.title = "Humidity[%]";
+				}
+				else if($( ".selectType" ).val() == 2) {
+					options.title.text = "Pressure";
+					options.axisX.title = "Time";
+					options.axisY.title = "Pressure[Pa]";
+				}
+				else if($( ".selectType" ).val() == 3) {
+					options.title.text = "Wind Speed";
+					options.axisX.title = "Time";
+					options.axisY.title = "Wind Speed[m/s]";
+				}
 				updateGraph();
 			});
 		});

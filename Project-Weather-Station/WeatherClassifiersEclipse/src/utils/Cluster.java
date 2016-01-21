@@ -6,8 +6,9 @@ public class Cluster {
 	private double normF;
 	private double[] mean;
 	private double[][] invM;
+	private double prior;
 	
-	public Cluster(String label, double normF, double[] mean, double[][] invM) {
+	public Cluster(String label, double normF, double[] mean, double[][] invM, double prior) {
 		if (invM[0].length != invM.length) {
 			throw new IllegalArgumentException("invM must be quadratic.");
 		}
@@ -19,6 +20,7 @@ public class Cluster {
 		this.normF = normF;
 		this.mean = mean;
 		this.invM = invM;
+		this.prior = prior;
 	}
 	
 	/**
@@ -46,6 +48,12 @@ public class Cluster {
 	public String getLabel() {
 		return label;
 	}
-	
+
+	/**
+	 * @return the prior
+	 */
+	public double getPrior() {
+		return prior;
+	}
 	
 }

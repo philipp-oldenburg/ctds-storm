@@ -2,7 +2,6 @@ package test;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import com.jmatio.io.MatFileReader;
@@ -62,8 +61,8 @@ public class Test2 {
 		}
 		System.out.println(clusterList.size());
 		
-		double[] test = {5.37222120496962, 996, 87, 5.61999988555908};
-		System.out.println(Statistics.maximumLikelihood(clusterList, test));
+		double[] testv = {5.37222120496962, 996, 87, 5.61999988555908, 0, 0, 0, 0};
+		System.out.println(Statistics.maximumLikelihood(clusterList, testv));
 //		------------------------------------------------------------------------------------------------------------
 		
 		try {
@@ -71,16 +70,70 @@ public class Test2 {
 			MLDouble mldata = (MLDouble) reader.getContent().get("data");
 			double[][] data = mldata.getArray();
 			int sum = 0;
+			int clear = 0;
+			int rain = 0;
+			int snow = 0;
+			int clouds = 0;
+			int mist = 0;
+			int fog = 0;
+			int drizzle = 0;
+			int thunderstorm = 0;
+			int dim = data[0].length-1;
 			for (int i = 0; i < data.length; i++) {
-				String classification = Statistics.maximumLikelihood(clusterList, data[i]);
-				System.out.println(classification);
-				if (classification.equals("Clear")) {
-					sum++;
+				double[] test = new double[dim];
+				for (int j = 0; j < dim; j++) {
+					test[j] = data[i][j];
+				}
+				double truth = data[i][dim];
+				String classification = Statistics.maximumLikelihoodPrior(clusterList, test);
+				switch (classification) {
+				case "Clear":
+					clear++;
+					if (truth == 0) sum++;
+					break;
+				case "Rain":
+					rain++;
+					if (truth == 1) sum++;
+					break;
+				case "Snow":
+					snow++;
+					if (truth == 2) sum++;
+					break;
+				case "Clouds":
+					clouds++;
+					if (truth == 3) sum++;
+					break;
+				case "Mist":
+					mist++;
+					if (truth == 4) sum++;
+					break;
+				case "Fog":
+					fog++;
+					if (truth == 5) sum++;
+					break;
+				case "Drizzle":
+					drizzle++;
+					if (truth == 6) sum++;
+					break;
+				case "Thunderstorm":
+					thunderstorm++;
+					if (truth == 7) sum++;
+					break;
+
+				default:
+					throw new RuntimeException("Bad classification: " + classification);
 				}
 			}
 			System.out.println(sum + " / " + data.length + " = " + (100.0 * sum)/data.length + "%");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			System.out.println("Clear: " + clear);
+			System.out.println("Rain: " + rain);
+			System.out.println("Snow: " + snow);
+			System.out.println("Clouds: " + clouds);
+			System.out.println("Mist: " + mist);
+			System.out.println("Fog: " + fog);
+			System.out.println("Drizzle: " + drizzle);
+			System.out.println("Thunderstorm: " + thunderstorm);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
