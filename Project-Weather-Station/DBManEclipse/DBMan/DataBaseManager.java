@@ -420,7 +420,8 @@ public class DataBaseManager {
 		private static final int PORT = 9001;
 		
 		/**Waits for connection on port 9001 and accepts connection in new thread, providing the following methods for acquisition of data:<br>
-		 * 	-Replies to "NEWDATA" with latest data tuple.<br>
+		 * 	-Replies to "NEWOWM" with latest data tuple which contains valid owm data.<br>
+		 * 	-Replies to "NEWSENS" with latest data tuple which contains valid sensor data.<br>
 		 * 	-Replies to "yyyy-MM-dd HH:mm:ss" with the data tuple which is closest, yet still older than the given timestamp.<br>
 		 * 	-Replies to "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd HH:mm:ss;(distinct)" with all data tuples in specified interval. Replace (distinct) with either
 		 * 	"TRUE" or "FALSE" to get distinct or all results.<br>
@@ -467,8 +468,8 @@ public class DataBaseManager {
 							String input, output;
 							while((input = in.readLine()) != null) {
 								System.out.println("Processing WebServer request...");
-								if (input.equals("NEWDATA")) {
-									sendLatestDataVector(out);
+								if (input.equals("NEWOWM") || input.equals("NEWSENS")) {
+									sendLatestDataVector(out, input);
 								} else {
 									String[] inputParts = input.split(";");
 									if (inputParts.length == 1) {
@@ -601,7 +602,7 @@ public class DataBaseManager {
 										continue;
 								}
 								
-								JSONObject currentObject = initCurrentJSONObjectPicky(columns, prevVals);
+								JSONObject currentObject = initCurrentJSONObjectPicky(columns, prevVals, rs);
 								
 								jretobj.put(Integer.toString(counter), currentObject);
 								counter++;
@@ -619,11 +620,19 @@ public class DataBaseManager {
 						}
 					}
 					
-					private void sendLatestDataVector(OutputStreamWriter out) throws IOException {
+					private void sendLatestDataVector(OutputStreamWriter out, String input) throws IOException {
 						registerDriver();
 						Connection conn = establishConnection();
 						System.out.println("Established DBConnection for WebServer.");
-						String query = "SELECT * FROM weatherdatalog ORDER BY id DESC LIMIT 1;";
+						String query = "SELECT * FROM weatherdatalog ";
+						
+						if (input.equals("NEWOWM")) {
+							query += "WHERE owmtemperature <> '-300' AND owmpressure <> '-1' AND owmhumidity <> '-1' AND owmwindspeed <> '-1' ";
+						} else {
+							query += "WHERE temperature <> '-300' AND pressure <> '-1' AND humidity <> '-1' AND light <> '-1' ";
+						}
+						
+						query += "ORDER BY id DESC LIMIT 1;";
 						
 						try {
 							Statement statement = conn.createStatement();
@@ -648,11 +657,12 @@ public class DataBaseManager {
 						}
 					}
 					
-					private JSONObject initCurrentJSONObjectPicky(String[] columns, String[] prevVals) throws JSONException {
+					private JSONObject initCurrentJSONObjectPicky(String[] columns, String[] prevVals, ResultSet rs) throws JSONException, SQLException {
 						JSONObject currentObject = new JSONObject();
 						for (int i=0; i < columns.length; i++) {
 							currentObject.put(columns[i], prevVals[i]);
 						}
+						currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
 						return currentObject;
 					}
 
