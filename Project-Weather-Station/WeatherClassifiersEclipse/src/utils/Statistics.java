@@ -6,9 +6,22 @@ import org.ejml.simple.SimpleMatrix;
 
 public class Statistics {
 	
+	public static String maximumLikelihoodPrior(List<Cluster> clusters, double[] x) {
+		String label = null;
+		double max = Double.NEGATIVE_INFINITY;
+		for (Cluster cluster : clusters) {
+			double l = cluster.getPrior() * likelihood(cluster, x);
+			if (l > max) {
+				max = l;
+				label = cluster.getLabel();
+			}
+		}
+		return label;
+	}
+	
 	public static String maximumLikelihood(List<Cluster> clusters, double[] x) {
 		String label = null;
-		double max = 0;
+		double max = Double.NEGATIVE_INFINITY;
 		for (Cluster cluster : clusters) {
 			double l = likelihood(cluster, x);
 			if (l > max) {

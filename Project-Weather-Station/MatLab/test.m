@@ -103,7 +103,8 @@ disp(invClear);
 norm = normClear;
 mean = meanClear';
 inv = invClear;
-save('Clear.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataClear,2) / size(mainData,2);
+save('Clear.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 disp('Rain:');
 normRain = 1./(sqrt((2*pi)^(length(meanRain)) * det(covRain)));
@@ -114,7 +115,8 @@ disp(invRain);
 norm = normRain;
 mean = meanRain';
 inv = invRain;
-save('Rain.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataRain,2) / size(mainData,2);
+save('Rain.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 disp('Snow:');
 normSnow = 1./(sqrt((2*pi)^(length(meanSnow)) * det(covSnow)));
@@ -125,7 +127,8 @@ disp(invSnow);
 norm = normSnow;
 mean = meanSnow';
 inv = invSnow;
-save('Snow.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataSnow,2) / size(mainData,2);
+save('Snow.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 disp('Clouds:');
 normClouds = 1./(sqrt((2*pi)^(length(meanClouds)) * det(covClouds)));
@@ -136,7 +139,8 @@ disp(invClouds);
 norm = normClouds;
 mean = meanClouds';
 inv = invClouds;
-save('Clouds.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataClouds,2) / size(mainData,2);
+save('Clouds.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 disp('Mist:');
 normMist = 1./(sqrt((2*pi)^(length(meanMist)) * det(covMist)));
@@ -147,7 +151,8 @@ disp(invMist);
 norm = normMist;
 mean = meanMist';
 inv = invMist;
-save('Mist.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataMist,2) / size(mainData,2);
+save('Mist.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 disp('Fog:');
 normFog = 1./(sqrt((2*pi)^(length(meanFog)) * det(covFog)));
@@ -158,7 +163,8 @@ disp(invFog);
 norm = normFog;
 mean = meanFog';
 inv = invFog;
-save('Fog.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataFog,2) / size(mainData,2);
+save('Fog.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 disp('Drizzle:');
 normDrizzle = 1./(sqrt((2*pi)^(length(meanDrizzle)) * det(covDrizzle)));
@@ -169,7 +175,8 @@ disp(invDrizzle);
 norm = normDrizzle;
 mean = meanDrizzle';
 inv = invDrizzle;
-save('Drizzle.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataDrizzle,2) / size(mainData,2);
+save('Drizzle.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 disp('Thunderstorm:');
 normThunderstorm = 1./(sqrt((2*pi)^(length(meanThunderstorm)) * det(covThunderstorm)));
@@ -180,7 +187,8 @@ disp(invThunderstorm);
 norm = normThunderstorm;
 mean = meanThunderstorm';
 inv = invThunderstorm;
-save('Thunderstorm.cluster.mat', 'norm', 'mean', 'inv');
+prior = size(dataThunderstorm,2) / size(mainData,2);
+save('Thunderstorm.cluster.mat', 'norm', 'mean', 'inv', 'prior');
 
 %% Try
 

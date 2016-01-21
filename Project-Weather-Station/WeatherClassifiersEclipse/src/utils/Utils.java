@@ -10,7 +10,7 @@ import com.jmatio.types.MLDouble;
 public class Utils {
 	
 	/**
-	 * Reads MatLab .mat file. Must include variables norm (scalar), mean (row vector), inv (quadratic matrix)
+	 * Reads MatLab .mat file. Must include variables norm (scalar), mean (row vector), inv (quadratic matrix), prior (scalar)
 	 * @param label
 	 * @param file
 	 * @return
@@ -31,7 +31,14 @@ public class Utils {
 			MLDouble invmat = (MLDouble) data.get("inv");
 			double[][] inv = invmat.getArray();
 			
-			return new Cluster(label, norm, mean, inv);
+			double prior = 1;
+			if (data.containsKey("prior")) {
+				MLDouble priormat = (MLDouble) data.get("prior");
+				double[][] priorarr = priormat.getArray();
+				prior = priorarr[0][0];
+			}
+			
+			return new Cluster(label, norm, mean, inv, prior);
 			
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Could not read cluster " + file.getAbsolutePath());
