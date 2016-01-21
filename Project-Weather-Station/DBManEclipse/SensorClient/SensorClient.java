@@ -47,7 +47,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (IOException e) {
 			return -300;
 		}
-		return Double.valueOf(res);
+		return res == null ? -300: Double.valueOf(res);
 	}
 	
 	/* (non-Javadoc)
@@ -61,7 +61,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (IOException e) {
 			return -1;
 		}
-		return Double.valueOf(res);
+		return res == null ? -1: Double.valueOf(res);
 	}
 	
 	/* (non-Javadoc)
@@ -75,7 +75,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (IOException e) {
 			return -1;
 		}
-		return Double.valueOf(res);
+		return res == null ? -1: Double.valueOf(res);
 	}
 	
 	/* (non-Javadoc)
@@ -89,7 +89,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (IOException e) {
 			return -1;
 		}
-		return Double.valueOf(res);
+		return res == null ? -1: Double.valueOf(res);
 	}
 	
 	/* (non-Javadoc)
@@ -103,7 +103,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (IOException e) {
 			return -1;
 		}
-		return Double.valueOf(res);
+		return res == null ? -1: Double.valueOf(res);
 	}
 	
 	/* (non-Javadoc)
@@ -117,7 +117,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (IOException e) {
 			return -1;
 		}
-		return Double.valueOf(res);
+		return res == null ? -1: Double.valueOf(res);
 	}
 	
 	public double getWindSpeed() {

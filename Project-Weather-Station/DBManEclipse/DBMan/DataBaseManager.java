@@ -577,7 +577,12 @@ public class DataBaseManager {
 								System.out.println("Processing WebServer request...");
 								String[] timestamps = input.split(";");
 								for (String timestamp : timestamps) {
-									if (!isValidTimestamp(timestamp)) System.out.println("Invalid timestamp detected."); continue;
+									if (!isValidTimestamp(timestamp)) {
+										out.write("IMD" + System.getProperty("line.separator"));
+										out.flush();
+										System.out.println("Invalid message detected.");
+										continue;
+									}
 								}
 								
 								registerDriver();
@@ -617,7 +622,7 @@ public class DataBaseManager {
 								} catch (SQLException | JSONException e) {
 									System.out.println("Unable to retrieve data from specified interval.");
 									e.printStackTrace();
-									out.write("1337");
+									out.write("CNRD" + System.getProperty("line.separator"));
 									out.flush();
 								}
 							}
