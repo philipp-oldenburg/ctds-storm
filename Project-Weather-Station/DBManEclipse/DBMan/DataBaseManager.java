@@ -447,8 +447,8 @@ public class DataBaseManager {
 		collector = new DataCollector(client, sensorServerAvailable);
 		collector.start();
 		
-//		WebServerServer wss = new WebServerServer();
-//		wss.start();
+		WebServerServer wss = new WebServerServer();
+		wss.start();
 	}
 
 	private boolean isValidTimestamp(String timestamp) {
