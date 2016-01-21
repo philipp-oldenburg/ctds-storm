@@ -12,7 +12,8 @@
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
-    
+    <!-- own css file -->
+	<link href="ourstyle.css" rel="stylesheet">
 	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -34,7 +35,7 @@
 				<div class="panel-body">
 					<div id="chart" style="width:80%;height:500px;"></div>
 					<div id="msgBar" class="well">
-					
+						<h3>Temp: <span class = "currTemp"></span>°C, Hum: <span class = "currHumi"></span>%, Press: <span class = "currPress"></span>Pa, Wind Speed: <span class = "currWind"></span>m/s <input class="refresh" type=button value="Refresh" onClick="getCurrentWeatherData()"></h3>
 					</div><!-- #msgBar.well -->
 				</div><!-- .panel-body -->
 			</div><!-- .panel panel-default -->
@@ -68,6 +69,7 @@
 		var doUpdate = true;
 		var obj;
 		var graph;
+		var currWeather;
 		
 		var date = new Date();
 		var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -78,6 +80,7 @@
 			while (s.length < size) s = "0" + s;
 			return s;
 		}
+		
 		var options = {
 				title: {
 					text: 'Temperature'
@@ -95,6 +98,23 @@
 			}
 		
 		var interval;
+		
+		function getCurrentWeatherData() {
+			request = $.ajax({
+				url: "/currentdatagatherer.php",
+				type: "post",
+				data: "",
+			});
+			request.done(function (response, textStatus, jqXHR){
+				// Log a message to the console
+				currWeather = JSON.parse(response);
+				$(".currTemp").html(parseFloat(currWeather[0].owmtemperature).toFixed(2));
+				$(".currHumi").html(parseFloat(currWeather[0].owmhumidity).toFixed(2));
+				$(".currPress").html(parseFloat(currWeather[0].owmpressure).toFixed(2));
+				$(".currWind").html(parseFloat(currWeather[0].owmwindspeed).toFixed(2));
+			});
+			
+		}
 		
 		function updateGraph() {
 			var timestamp1 = $(".selectYear").val() + "-" + $(".selectMonth").val() + "-" + $(".selectDay1").val() + " 00:00:00";
@@ -198,6 +218,7 @@
 			//create chart
 			graph = new CanvasJS.Chart('chart', options);
 			updateGraph();
+			getCurrentWeatherData();
 			
 			
 			// apply event handlers to buttons
@@ -246,7 +267,7 @@
 				else if($( ".selectType" ).val() == 2) {
 					options.title.text = "Pressure";
 					options.axisX.title = "Time";
-					options.axisY.title = "Pressure[P]";
+					options.axisY.title = "Pressure[Pa]";
 				}
 				else if($( ".selectType" ).val() == 3) {
 					options.title.text = "Wind Speed";
