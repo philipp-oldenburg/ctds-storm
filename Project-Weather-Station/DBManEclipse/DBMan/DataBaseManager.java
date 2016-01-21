@@ -577,7 +577,7 @@ public class DataBaseManager {
 								System.out.println("Processing WebServer request...");
 								String[] timestamps = input.split(";");
 								for (String timestamp : timestamps) {
-									if (!isValidTimestamp(timestamp)) System.out.println("Invalid timestamp detected."); break;
+									if (!isValidTimestamp(timestamp)) System.out.println("Invalid timestamp detected."); continue;
 								}
 								
 								registerDriver();
