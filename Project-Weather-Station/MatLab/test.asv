@@ -1,0 +1,171 @@
+%% Train
+mainData = csvread('cleandataTranslatedSimplified.csv')';
+
+ind = find(mainData(5,:) == 0);
+dataClear = mainData(1:4,ind);
+ind = find(mainData(5,:) == 1);
+dataRain = mainData(1:4,ind);
+ind = find(mainData(5,:) == 2);
+dataSnow = mainData(1:4,ind);
+ind = find(mainData(5,:) == 3);
+dataClouds = mainData(1:4,ind);
+ind = find(mainData(5,:) == 4);
+dataMist = mainData(1:4,ind);
+ind = find(mainData(5,:) == 5);
+dataFog = mainData(1:4,ind);
+ind = find(mainData(5,:) == 6);
+dataDrizzle = mainData(1:4,ind);
+ind = find(mainData(5,:) == 7);
+dataThunderstorm = mainData(1:4,ind);
+
+meanClear = sum(dataClear, 2) ./ size(dataClear,2);
+meanRain = sum(dataRain, 2) ./ size(dataRain,2);
+meanSnow = sum(dataSnow, 2) ./ size(dataSnow,2);
+meanClouds = sum(dataClouds, 2) ./ size(dataClouds,2);
+meanMist = sum(dataMist, 2) ./ size(dataMist,2);
+meanFog = sum(dataFog, 2) ./ size(dataFog,2);
+meanDrizzle = sum(dataDrizzle, 2) ./ size(dataDrizzle,2);
+meanThunderstorm = sum(dataThunderstorm, 2) ./ size(dataThunderstorm,2);
+
+%calculate covariance matrix for skin
+covClear = zeros(size(dataClear, 1));
+for i = 1:size(dataClear,2)
+    x = (dataClear(:,i) - meanClear);
+    covClear = covClear + (x * x');
+end
+covClear = covClear / size(clearData,2);
+
+%calculate covariance matrix for nonskin
+covN = zeros(size(ndata, 1));
+for i = 1:size(ndata,2)
+    x = (ndata(:,i) - meanN);
+    covN = covN + (x * x');
+end
+covN = covN / size(ndata,2);
+
+disp('Mean for skin:');
+disp(meanS);
+disp('');
+disp('Mean for non-skin:');
+disp(meanN);
+disp('');
+
+disp('Covariance for skin:');
+disp(covS);
+disp('');
+disp('Covariance for non-skin:');
+disp(covN);
+disp('');
+
+
+%% Aufgabe 2
+image = imread('image.png');
+image = im2double(image);
+
+mask = imread('mask.png');
+mask = im2double(mask);
+
+pIsSkin = sum(mask(:))/(size(mask,1)*size(mask,2));
+
+outPicLI = likelyClass(image, meanS, meanN, covS, covN);
+outPicPI = priorClass(image, meanS, meanN, covS, covN, pIsSkin);
+
+figure(1)
+imshow(outPicLI);
+figure(2)
+imshow(outPicPI);
+
+imwrite(outPicLI, 'outputLI.png', 'png');
+imwrite(outPicPI, 'outputPI.png', 'png');
+
+
+%% Aufgabe 3
+
+dimI = size(image,1)*size(image,2);
+disp('Training Data');
+disp(' ');
+
+%likelihood - training
+errorsLI = outPicLI - mask;
+falsePositivesLI = sum(sum(arrayfun(@(x) (x== 1), errorsLI))) / dimI;
+falseNegativesLI = sum(sum(arrayfun(@(x) (x==-1), errorsLI))) / dimI;
+falseTotalLI = falsePositivesLI + falseNegativesLI;
+
+disp('Likelihood Classifier:');
+disp(['False Positives = ' num2str(falsePositivesLI * 100) '%']);
+disp(['False Negatives = ' num2str(falseNegativesLI * 100) '%']);
+disp(['Total Error     = ' num2str(falseTotalLI * 100) '%']);
+disp(' ');
+
+%prior - training
+errorsPI = outPicPI - mask;
+falsePositivesPI = sum(sum(arrayfun(@(x) (x== 1), errorsPI))) / dimI;
+falseNegativesPI = sum(sum(arrayfun(@(x) (x==-1), errorsPI))) / dimI;
+falseTotalPI = falsePositivesPI + falseNegativesPI;
+
+disp('Prior Classifier:');
+disp(['False Positives = ' num2str(falsePositivesPI * 100) '%']);
+disp(['False Negatives = ' num2str(falseNegativesPI * 100) '%']);
+disp(['Total Error     = ' num2str(falseTotalPI * 100) '%']);
+disp(' ');
+
+%Testing
+testImg = imread('test.png');
+testImg = im2double(testImg);
+testmask = imread('mask-test.png');
+testmask = im2double(testmask);
+
+outPicLT = likelyClass(testImg, meanS, meanN, covS, covN);
+outPicPT = priorClass(testImg, meanS, meanN, covS, covN, pIsSkin);
+dimT = size(testImg,1)*size(testImg,2);
+
+imwrite(outPicLT, 'outputLT.png', 'png');
+imwrite(outPicPT, 'outputPT.png', 'png');
+
+disp('Testing Data');
+disp(' ');
+
+%likelihood - testing
+errorsLT = outPicLT - testmask;
+falsePositivesLT = sum(sum(arrayfun(@(x) (x== 1), errorsLT))) / dimT;
+falseNegativesLT = sum(sum(arrayfun(@(x) (x==-1), errorsLT))) / dimT;
+falseTotalLT = falsePositivesLT + falseNegativesLT;
+
+disp('Likelihood Classifier:');
+disp(['False Positives = ' num2str(falsePositivesLT * 100) '%']);
+disp(['False Negatives = ' num2str(falseNegativesLT * 100) '%']);
+disp(['Total Error     = ' num2str(falseTotalLT * 100) '%']);
+disp(' ');
+
+%prior - testing
+errorsPT = outPicPT - testmask;
+falsePositivesPT = sum(sum(arrayfun(@(x) (x== 1), errorsPT))) / dimT;
+falseNegativesPT = sum(sum(arrayfun(@(x) (x==-1), errorsPT))) / dimT;
+falseTotalPT = falsePositivesPT + falseNegativesPT;
+
+disp('Prior Classifier:');
+disp(['False Positives = ' num2str(falsePositivesPT * 100) '%']);
+disp(['False Negatives = ' num2str(falseNegativesPT * 100) '%']);
+disp(['Total Error     = ' num2str(falseTotalPT * 100) '%']);
+disp(' ');
+
+%% Extra
+%-{
+dispErrorLI = displayError(mask, errorsLI);
+imwrite(dispErrorLI, 'errorsLI.png', 'png');
+dispErrorPI = displayError(mask, errorsPI);
+imwrite(dispErrorPI, 'errorsPI.png', 'png');
+dispErrorLT = displayError(testmask, errorsLT);
+imwrite(dispErrorLT, 'errorsLT.png', 'png');
+dispErrorPT = displayError(testmask, errorsPT);
+imwrite(dispErrorPT, 'errorsPT.png', 'png');
+figure(3);
+imshow(dispErrorLI);
+figure(4);
+imshow(dispErrorPI);
+figure(5);
+imshow(dispErrorLT);
+figure(6);
+imshow(dispErrorPT);
+%-}
+
