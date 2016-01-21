@@ -17,6 +17,7 @@ import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -127,9 +128,6 @@ public class DataBaseManager {
 			Callable<CurrentWeather> task = new Callable<CurrentWeather>() {
 				public CurrentWeather call() throws IOException, JSONException {
 					CurrentWeather currentWeather = owmap.currentWeatherByCityName("Basel", "CH");
-					if (currentWeather.getMainInstance() == null || currentWeather.getWindInstance() == null) {
-						throw new IOException();
-					}
 					return currentWeather;
 				}
 			};
@@ -159,7 +157,7 @@ public class DataBaseManager {
 					currentWeather = getCurrentWeatherWithTimeout(currentWeather);
 					System.out.println("Received current Weather from OpenWeatherMap.");
 				} catch (ExecutionException e) {
-					System.out.println("OpenWeatherMap appears to be inaccessible or main/wind instance could not be retrieved.");
+					System.out.println("OpenWeatherMap appears to be inaccessible.");
 					weathermapAccessible = false;
 					//e.printStackTrace();
 				} catch (InterruptedException e) {
@@ -294,15 +292,44 @@ public class DataBaseManager {
 		 */
 		private void initWDwithOWMData(CurrentWeather currentWeather, WeatherData data) {
 			try {
-				data.setOwmTemp(fahrenheitToCelsius(currentWeather.getMainInstance().getTemperature()));
-				data.setOwmPressure(currentWeather.getMainInstance().getPressure());
-				data.setOwmHumidity(currentWeather.getMainInstance().getHumidity());
-				data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
-				data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
-				data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
-				data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
+				if (currentWeather.getMainInstance() != null) {
+					data.setOwmTemp(fahrenheitToCelsius(currentWeather.getMainInstance().getTemperature()));
+					data.setOwmPressure(currentWeather.getMainInstance().getPressure());
+					data.setOwmHumidity(currentWeather.getMainInstance().getHumidity());
+				} else {
+					data.setOwmTemp(TEMPDEFAULTVALUE);
+					data.setOwmPressure(PRESDEFAULTVALUE);
+					data.setOwmHumidity(HUMDEFAULTVALUE);
+				}
+				
+				if (currentWeather.getWindInstance() != null) {
+					data.setOwmWindSpeed(currentWeather.getWindInstance().getWindSpeed());
+					data.setOwmWindDegree(currentWeather.getWindInstance().getWindDegree());
+				} else {
+					data.setOwmWindSpeed(WSPEEDDEFAULTVALUE);
+					data.setOwmWindDegree(WDEGREEDEFAULTVALUE);
+				}
+				
+				if ((currentWeather.getWeatherCount() > 0) && (currentWeather.getWeatherInstance(0) != null)) {
+					data.setOwmDesc(currentWeather.getWeatherInstance(0).getWeatherDescription());
+					data.setOwmName(currentWeather.getWeatherInstance(0).getWeatherName());
+				} else {
+					data.setOwmDesc("N/A");
+					data.setOwmName("N/A");
+				}
+				
+				if (currentWeather.getRainInstance() != null) {
+					
+					if (currentWeather.getRainInstance().hasRain1h()) System.out.println(currentWeather.getRainInstance().getRain1h());
+					if (currentWeather.getRainInstance().hasRain3h()) System.out.println(currentWeather.getRainInstance().getRain3h());
+					
+				}
+				
+				if (currentWeather.getCloudsInstance() != null) {
+					if (currentWeather.getCloudsInstance().hasPercentageOfClouds()) System.out.println(currentWeather.getCloudsInstance().getPercentageOfClouds());
+				}
+				
 			} catch (NullPointerException e) {
-				System.out.println("Could not get main/wind/weather instance of currentWeather.\n Should have thrown exception earlier. Something's seriously wrong here.");
 				e.printStackTrace();
 				initWDwithOwmDefaults(data);
 			}
@@ -393,7 +420,13 @@ public class DataBaseManager {
 		private static final int PORT = 9001;
 		
 		/**Waits for connection on port 9001 and accepts connection in new thread, providing the following methods for acquisition of data:<br>
-		 * 	-
+		 * 	-Replies to "NEWDATA" with latest data tuple.<br>
+		 * 	-Replies to "yyyy-MM-dd HH:mm:ss" with the data tuple which is closest, yet still older than the given timestamp.<br>
+		 * 	-Replies to "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd HH:mm:ss;(distinct)" with all data tuples in specified interval. Replace (distinct) with either
+		 * 	"TRUE" or "FALSE" to get distinct or all results.<br>
+		 * 	-Replies to "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd HH:mm:ss;(distinct);(arg1);(arg2);...;(argX)" with all  data tuples in specified interval. Replace (distinct)
+		 *  with either "TRUE" or "FALSE" to get distinct or all results. Use args to specify the columns which shall be returned.<br>
+		 * Error codes: "CNRD" if data could not be read (Due to SQL or JSONException), "IMD" if invalid message is detected.
 		 */
 		public void run() {
 			ServerSocket server = null;
@@ -433,23 +466,65 @@ public class DataBaseManager {
 							System.out.println("started WebServerServer");
 							String input, output;
 							while((input = in.readLine()) != null) {
-								
 								System.out.println("Processing WebServer request...");
 								if (input.equals("NEWDATA")) {
 									sendLatestDataVector(out);
 								} else {
-								
-									String[] timestamps = input.split(";");
-									for (String timestamp : timestamps) {
-										if (!isValidTimestamp(timestamp)) {
+									String[] inputParts = input.split(";");
+									if (inputParts.length == 1) {
+										if(!isValidTimestamp(inputParts[0])) {
 											out.write("IMD" + System.getProperty("line.separator"));
 											out.flush();
 											System.out.println("Invalid message detected.");
-											continue;
+										} else {
+											System.out.println("Requested closest data Vector");
+											sendDataVectorClosest(out, inputParts[0]);
+										}
+									} else if (inputParts.length == 3) {
+										
+										if (isValidTimestamp(inputParts[0]) && isValidTimestamp(inputParts[1])) {
+											if (inputParts[2].equals("TRUE")) {
+												System.out.println("Requested closest data Vector");
+												sendDataVectorsInRange(out, inputParts, null, true);
+											} else if (inputParts[2].equals("FALSE")){
+												System.out.println("Requested closest data Vector");
+												sendDataVectorsInRange(out, inputParts, null, false);
+											} else {
+												out.write("IMD" + System.getProperty("line.separator"));
+												out.flush();
+												System.out.println("Invalid message detected.");
+											}
+										} else {
+											out.write("IMD" + System.getProperty("line.separator"));
+											out.flush();
+											System.out.println("Invalid message detected.");
+										}
+									} else if (inputParts.length > 3) {
+										
+										if (isValidTimestamp(inputParts[0]) && isValidTimestamp(inputParts[1])) {
+											
+											String[] columns = new String[inputParts.length-3];
+											for (int i=3; i < inputParts.length; i++) {
+												columns[i-3] = inputParts[i];
+											}
+											
+											if (inputParts[2].equals("TRUE")) {
+												System.out.println("Requested closest data Vector");
+												sendDataVectorsInRange(out, inputParts, columns, true);
+											} else if (inputParts[2].equals("FALSE")){
+												System.out.println("Requested closest data Vector");
+												sendDataVectorsInRange(out, inputParts, columns, false);
+											} else {
+												out.write("IMD" + System.getProperty("line.separator"));
+												out.flush();
+												System.out.println("Invalid message detected.");
+											}
+										} else {
+											out.write("IMD" + System.getProperty("line.separator"));
+											out.flush();
+											System.out.println("Invalid message detected.");
 										}
 									}
-									
-									sendDataVectorsInRange(out, timestamps);
 								}
 							}
 						} catch (IOException e) {
@@ -457,13 +532,51 @@ public class DataBaseManager {
 							e.printStackTrace();
 						}
 					}
+					
+					private void sendDataVectorClosest(OutputStreamWriter out, String timestamp) throws IOException {
+						
+						registerDriver();
+						Connection conn = establishConnection();
+						System.out.println("Established DBConnection for WebServer.");
+						String query = "SELECT * FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ORDER BY id DESC LIMIT 1;";
+						
+						try {
+							Statement statement = conn.createStatement();
+							ResultSet rs = statement.executeQuery(query);
+							System.out.println("Processed SQL query.");
+							JSONObject jretobj = new JSONObject();
+							while(rs.next()) {
+								JSONObject currentObject = initCurrentJSONObject(rs);
+								
+								jretobj.put("0", currentObject);
+							}
+							jretobj.put("length", 1);
+							out.write(jretobj.toString() + System.getProperty("line.separator"));
+							out.flush();
+							System.out.println("Sent JSON object");
+							
+						} catch (SQLException | JSONException e) {
+							System.out.println("Unable to retrieve data from specified interval.");
+							e.printStackTrace();
+							out.write("CNRD" + System.getProperty("line.separator"));
+							out.flush();
+						}
+						
+					}
 
-					private void sendDataVectorsInRange(OutputStreamWriter out, String[] timestamps)
+					private void sendDataVectorsInRange(OutputStreamWriter out, String[] timestamps, String[] columns, boolean distinct)
 							throws IOException {
 						registerDriver();
 						Connection conn = establishConnection();
 						System.out.println("Established DBConnection for WebServer.");
-						String query = "SELECT * FROM weatherdatalog WHERE timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
+						String query = "SELECT ";
+						if(columns != null) {
+							for (int i=0; i < columns.length-1; i++) {
+								query += columns[i] + ", ";
+							}
+							query += columns[columns.length-1];
+						}
+						query += " FROM weatherdatalog WHERE timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
 						
 						try {
 							Statement statement = conn.createStatement();
@@ -471,28 +584,28 @@ public class DataBaseManager {
 							System.out.println("Processed SQL query.");
 							JSONObject jretobj = new JSONObject();
 							int counter = 0;
+							String[] prevVals = new String[columns.length];
+							Arrays.fill(prevVals, "");
 							while(rs.next()) {
-								JSONObject currentObject = new JSONObject();
-								currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
-								currentObject.put("owmtemperature", rs.getDouble("owmtemperature"));
-								currentObject.put("owmpressure", rs.getDouble("owmpressure"));
-								currentObject.put("owmhumidity", rs.getDouble("owmhumidity"));
-								currentObject.put("temperature", rs.getDouble("temperature"));
-								currentObject.put("pressure", rs.getDouble("pressure"));
-								currentObject.put("humidity", rs.getDouble("humidity"));
-								currentObject.put("sensorwindspeed", rs.getDouble("sensorwindspeed"));
-								currentObject.put("owmwindspeed", rs.getDouble("owmwindspeed"));
-								currentObject.put("owmwinddegree", rs.getDouble("owmwinddegree"));
-								currentObject.put("light", rs.getDouble("light"));
-								currentObject.put("owmweathername", rs.getString("owmweathername"));
-								currentObject.put("owmweatherdesc", rs.getString("owmweatherdesc"));
 								
-								System.out.println("Created current object");
+								if (distinct) {
+									boolean changed = false;
+									for (int i = 0; i < prevVals.length; i++) {
+										String tmp = Double.toString(rs.getDouble(columns[i]));
+										if (!tmp.equals(prevVals[i])) {
+											changed = true;
+											prevVals[i] = tmp;
+										}
+									}
+									if (!changed)
+										continue;
+								}
+								
+								JSONObject currentObject = initCurrentJSONObjectPicky(columns, prevVals);
 								
 								jretobj.put(Integer.toString(counter), currentObject);
 								counter++;
 							}
-							JSONObject tempObj = new JSONObject();
 							jretobj.put("length", counter);
 							out.write(jretobj.toString() + System.getProperty("line.separator"));
 							out.flush();
@@ -505,7 +618,7 @@ public class DataBaseManager {
 							out.flush();
 						}
 					}
-
+					
 					private void sendLatestDataVector(OutputStreamWriter out) throws IOException {
 						registerDriver();
 						Connection conn = establishConnection();
@@ -518,26 +631,10 @@ public class DataBaseManager {
 							System.out.println("Processed SQL query.");
 							JSONObject jretobj = new JSONObject();
 							while(rs.next()) {
-								JSONObject currentObject = new JSONObject();
-								currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
-								currentObject.put("owmtemperature", rs.getDouble("owmtemperature"));
-								currentObject.put("owmpressure", rs.getDouble("owmpressure"));
-								currentObject.put("owmhumidity", rs.getDouble("owmhumidity"));
-								currentObject.put("temperature", rs.getDouble("temperature"));
-								currentObject.put("pressure", rs.getDouble("pressure"));
-								currentObject.put("humidity", rs.getDouble("humidity"));
-								currentObject.put("sensorwindspeed", rs.getDouble("sensorwindspeed"));
-								currentObject.put("owmwindspeed", rs.getDouble("owmwindspeed"));
-								currentObject.put("owmwinddegree", rs.getDouble("owmwinddegree"));
-								currentObject.put("light", rs.getDouble("light"));
-								currentObject.put("owmweathername", rs.getString("owmweathername"));
-								currentObject.put("owmweatherdesc", rs.getString("owmweatherdesc"));
-								
-								System.out.println("Created current object");
+								JSONObject currentObject = initCurrentJSONObject(rs);
 								
 								jretobj.put("0", currentObject);
 							}
-							JSONObject tempObj = new JSONObject();
 							jretobj.put("length", 1);
 							out.write(jretobj.toString() + System.getProperty("line.separator"));
 							out.flush();
@@ -550,10 +647,37 @@ public class DataBaseManager {
 							out.flush();
 						}
 					}
+					
+					private JSONObject initCurrentJSONObjectPicky(String[] columns, String[] prevVals) throws JSONException {
+						JSONObject currentObject = new JSONObject();
+						for (int i=0; i < columns.length; i++) {
+							currentObject.put(columns[i], prevVals[i]);
+						}
+						return currentObject;
+					}
+
+					
+					private JSONObject initCurrentJSONObject(ResultSet rs) throws JSONException, SQLException {
+						JSONObject currentObject = new JSONObject();
+						currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
+						currentObject.put("owmtemperature", rs.getDouble("owmtemperature"));
+						currentObject.put("owmpressure", rs.getDouble("owmpressure"));
+						currentObject.put("owmhumidity", rs.getDouble("owmhumidity"));
+						currentObject.put("temperature", rs.getDouble("temperature"));
+						currentObject.put("pressure", rs.getDouble("pressure"));
+						currentObject.put("humidity", rs.getDouble("humidity"));
+						currentObject.put("sensorwindspeed", rs.getDouble("sensorwindspeed"));
+						currentObject.put("owmwindspeed", rs.getDouble("owmwindspeed"));
+						currentObject.put("owmwinddegree", rs.getDouble("owmwinddegree"));
+						currentObject.put("light", rs.getDouble("light"));
+						currentObject.put("owmweathername", rs.getString("owmweathername"));
+						currentObject.put("owmweatherdesc", rs.getString("owmweatherdesc"));
+						return currentObject;
+					}
+					
 				}.init(server, client);
 				connection.start();
 			}
 		}
 	}
-	
 }

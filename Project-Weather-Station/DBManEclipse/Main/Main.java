@@ -57,11 +57,11 @@ public class Main {
 				}
 			} catch (IOException e) {
 				if (requireSensorServerAvailable) {	
-					System.out.println("Detected IO exception:");
+					System.out.println("Unable to connect to SensorServer:");
 					e.printStackTrace();
 					client = standByForIP(client);
 				} else {
-					System.out.println("Detected IO exception.");
+					System.out.println("Unable to connect to SensorServer.");
 					sensorServerAvailable = false;
 				}
 			}
@@ -71,16 +71,6 @@ public class Main {
 		}
 		DataBaseManager dbMan = new DataBaseManager(client, sensorServerAvailable);
 		System.out.println("created DBMan");
-		
-		//For testing purposes
-//		MockWebServer webserver = new MockWebServer();
-//		try {
-//			Thread.sleep(1000);
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
-//		webserver.start();
-		//End of test stuff
 	}
 
 	private static SensorClientInterface standByForIP(SensorClientInterface client) {
