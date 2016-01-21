@@ -575,6 +575,9 @@ public class DataBaseManager {
 							String input, output;
 							while((input = in.readLine()) != null) {
 								System.out.println("Processing WebServer request...");
+								if (input.equals("NEWDATA")) {
+									
+								}
 								String[] timestamps = input.split(";");
 								for (String timestamp : timestamps) {
 									if (!isValidTimestamp(timestamp)) {
@@ -595,6 +598,7 @@ public class DataBaseManager {
 									ResultSet rs = statement.executeQuery(query);
 									System.out.println("Processed SQL query.");
 									JSONObject jretobj = new JSONObject();
+									int counter = 0;
 									while(rs.next()) {
 										JSONObject currentObject = new JSONObject();
 										currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
@@ -613,8 +617,11 @@ public class DataBaseManager {
 										
 										System.out.println("Created current object");
 										
-										jretobj.put(rs.getTimestamp("timestamp").toString(), currentObject);
+										jretobj.put(Integer.toString(counter), currentObject);
+										counter++;
 									}
+									JSONObject tempObj = new JSONObject();
+									jretobj.put("length", counter+1);
 									out.write(jretobj.toString() + System.getProperty("line.separator"));
 									out.flush();
 									System.out.println("Sent JSON object");
