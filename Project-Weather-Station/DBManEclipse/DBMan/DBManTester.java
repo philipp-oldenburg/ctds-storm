@@ -1,4 +1,6 @@
 
+import java.io.IOException;
+
 import org.junit.Test;
 
 public class DBManTester {
@@ -29,6 +31,12 @@ public class DBManTester {
 		@Override
 		public String getSensorServerAddress() {
 			return null;
+		}
+
+		@Override
+		public boolean ping() throws IOException {
+			// TODO Auto-generated method stub
+			return false;
 		}
 	}
 	

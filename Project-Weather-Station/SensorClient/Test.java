@@ -25,8 +25,6 @@ public class Test {
 			System.out.println(client.getSealevelPressure());
 			System.out.println("LUMI");
 			System.out.println(client.getLight());
-			System.out.println("PING");
-			System.out.println(client.ping());
 		} else System.out.println("Rekt");
 	}
 

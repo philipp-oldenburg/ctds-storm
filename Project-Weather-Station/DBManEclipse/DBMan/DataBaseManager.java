@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketImpl;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -39,7 +40,6 @@ public class DataBaseManager {
 	private String user = "CTDS_DB_User";
 	private String password = "password";
 	
-	private static final int WSS_PORT = 9001;
 	
 	/** Establishes connection to database. Host, User and Password are currently hardcoded.
 	 * 
@@ -84,8 +84,6 @@ public class DataBaseManager {
 		private static final double LIGHTDEFAULTVALUE = -1;
 
 		private static final long WEATHER_REQUEST_TIMEOUT = 2;
-
-		private static final int ITERATION_LIMIT = 5;
 		
 		private SensorClientInterface client;
 		boolean reconnectorRunning = false;
@@ -108,21 +106,12 @@ public class DataBaseManager {
 						System.out.println("created new client");
 						sensorServerAvailable = true;
 						break;
-					} catch(UnknownHostException e) {
-						System.out.println("Unknown Host. Please verify if SensorServer is actually running.");
+					} catch(Exception e) {
+						System.out.println("Could not reconnect to SensorServer. Still trying...");
 						try {
 							Thread.sleep(1000);
 						} catch (InterruptedException e1) {
-							e1.printStackTrace();
-						}
-						continue;
-					} catch(IOException e) {
-						System.out.println("IOException. Do something.");
-						//e.printStackTrace();
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e1) {
-							e1.printStackTrace();
+							//e1.printStackTrace();
 						}
 						continue;
 					}
@@ -130,32 +119,6 @@ public class DataBaseManager {
 				reconnectorRunning = false;
 			}
 		}
-		
-//		private void reestablishSensorServerConnection() {
-//			while (true) {
-//				try {
-//					client = new SensorClient(sensorServerAddress);
-//					break;
-//				} catch(UnknownHostException e) {
-//					System.out.println("Unknown Host. Please verify if SensorServer is actually running.");
-//					try {
-//						Thread.sleep(1000);
-//					} catch (InterruptedException e1) {
-//						e1.printStackTrace();
-//					}
-//					continue;
-//				} catch(IOException e) {
-//					System.out.println("IOException. Do something.");
-//					e.printStackTrace();
-//					try {
-//						Thread.sleep(1000);
-//					} catch (InterruptedException e1) {
-//						e1.printStackTrace();
-//					}
-//					continue;
-//				}
-//			}
-//		}
 		
 		private CurrentWeather getCurrentWeatherWithTimeout(CurrentWeather currentWeather) throws ExecutionException, InterruptedException, TimeoutException {
 			
@@ -173,28 +136,6 @@ public class DataBaseManager {
 			
 			Future<CurrentWeather> future = executor.submit(task);
 			currentWeather = future.get(WEATHER_REQUEST_TIMEOUT, TimeUnit.SECONDS);
-			
-			
-			
-//			int tries = 0;
-//			while(tries < ITERATION_LIMIT) {
-//				Future<CurrentWeather> future = executor.submit(task);
-//				try {
-//					currentWeather = future.get(WEATHER_REQUEST_TIMEOUT, TimeUnit.SECONDS);
-//					break;
-//				} catch (InterruptedException e) {
-//					System.out.println("Request interrupted while waiting for response.");
-//					e.printStackTrace();
-//					continue;
-//				} catch (TimeoutException e) {
-//					System.out.println("Did not receive response within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
-//					e.printStackTrace();
-//					continue;
-//				} 
-//				finally {		What would happen here? finally is going to be called after the continue/break, does that mean that future is 
-//					future.cancel(true);		already gone at this point, causing a runtime error?
-//				}
-//			}
 			
 			return currentWeather;
 		}
@@ -220,15 +161,15 @@ public class DataBaseManager {
 				} catch (ExecutionException e) {
 					System.out.println("OpenWeatherMap appears to be inaccessible or main/wind instance could not be retrieved.");
 					weathermapAccessible = false;
-					e.printStackTrace();
+					//e.printStackTrace();
 				} catch (InterruptedException e) {
 					weathermapAccessible = false;
 					System.out.println("Request interrupted while waiting for response.");
-					e.printStackTrace();
+					//e.printStackTrace();
 				} catch (TimeoutException e) {
 					weathermapAccessible = false;
 					System.out.println("Did not receive response within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 				
 				try {
@@ -237,7 +178,7 @@ public class DataBaseManager {
 					System.out.println("SensorServer is available");
 				} catch (Exception e) {
 					sensorServerAvailable = false;
-					e.printStackTrace();
+					//e.printStackTrace();
 					System.out.println("Client unreachable. Trying to reconnect...");
 					if (!reconnectorRunning) {
 						SCReconnector reconnector = new SCReconnector();
@@ -245,25 +186,6 @@ public class DataBaseManager {
 					}
 				}
 				
-//				try {
-//					sensorServerAvailable = isPortReachable(sensorServerAddress, 1337);
-////					if (client == null && sensorServerAvailable) {
-////						client = new SensorClient(sensorServerAddress);
-////					}
-//					System.out.println("SensorServer is available");
-//				} catch (UnknownHostException e1) {
-//					if (!reconnectorRunning) {
-//						SCReconnector reconnector = new SCReconnector();
-//						reconnector.start();
-//					}
-//					e1.printStackTrace();
-//				} catch (IOException e1) {
-//					if (!reconnectorRunning) {
-//						SCReconnector reconnector = new SCReconnector();
-//						reconnector.start();
-//					}
-//					e1.printStackTrace();
-//				}
 				System.out.println("Creating WeatherData object...");
 				
 				WeatherData data = initializeWeatherDataObject(currentWeather, sensorServerAvailable, weathermapAccessible);
@@ -343,7 +265,7 @@ public class DataBaseManager {
 			data.setOwmDesc("N/A");
 			data.setOwmName("N/A");
 			data.setOwmWindSpeed(WSPEEDDEFAULTVALUE);
-			data.setOwmWindDegree(WDEGREEDEFAULTVALUE);
+			data.setOwmWindDegree(WDEGREEDEFAULTVALUE); 
 		}
 		
 		/**Sets all fields to default values, indicating that no sensor/OWM-data is present.
@@ -447,10 +369,15 @@ public class DataBaseManager {
 		collector = new DataCollector(client, sensorServerAvailable);
 		collector.start();
 		
-		WebServerServer wss = new WebServerServer();
-		wss.start();
+		DataProvider provider = new DataProvider();
+		provider.start();
 	}
-
+	
+	/**Checks if given String is of the following SimpleDateFormat: "yyyy-MM-dd HH:mm:ss"
+	 * 
+	 * @param timestamp
+	 * @return
+	 */
 	private boolean isValidTimestamp(String timestamp) {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		try {
@@ -461,61 +388,170 @@ public class DataBaseManager {
 		}
 	}
 	
-	private class WebServerServer extends Thread {
+	private class DataProvider extends Thread {
 		
+		private static final int PORT = 9001;
+		
+		/**Waits for connection on port 9001 and accepts connection in new thread, providing the following methods for acquisition of data:<br>
+		 * 	-
+		 */
 		public void run() {
-			try (
-				ServerSocket wsServer = new ServerSocket(WSS_PORT);
-				Socket wsClient = wsServer.accept();
-				OutputStreamWriter out = new OutputStreamWriter(wsClient.getOutputStream(), StandardCharsets.UTF_8);
-				BufferedReader in = new BufferedReader(new InputStreamReader(wsClient.getInputStream()));
-			) {
-				String input, output;
-				while((input = in.readLine()) != null) {
-					System.out.println("Processing WebServer request...");
-					String[] timestamps = input.split(";");
-					for (String timestamp : timestamps) {
-						if (!isValidTimestamp(timestamp)) System.out.println("Invalid timestamp detected."); break;
-					}
-					
-					registerDriver();
-					Connection conn = establishConnection();
-					System.out.println("Established DBConnection for WebServer.");
-					String query = "SELECT * FROM weatherdatalog WHERE timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
-					
-					try {
-						Statement statement = conn.createStatement();
-						ResultSet rs = statement.executeQuery(query);
-						System.out.println("Processed SQL query.");
-						JSONObject jretobj = new JSONObject();
-						while(rs.next()) {
-							JSONObject currentObject = new JSONObject();
-							currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
-							currentObject.put("temperature", rs.getDouble("temperature"));
-							currentObject.put("pressure", rs.getDouble("pressure"));
-							currentObject.put("humidity", rs.getDouble("humidity"));
-							currentObject.put("sensorwindspeed", rs.getDouble("sensorwindspeed"));
-							currentObject.put("owmwindspeed", rs.getDouble("owmwindspeed"));
-							currentObject.put("owmwinddegree", rs.getDouble("owmwinddegree"));
-							currentObject.put("light", rs.getDouble("light"));
-							currentObject.put("owmweathername", rs.getString("owmweathername"));
-							currentObject.put("owmweatherdesc", rs.getString("owmweatherdesc"));
-							
-							System.out.println("Created current object");
-							
-							jretobj.put(rs.getTimestamp("timestamp").toString(), currentObject);
-						}
-						out.write(jretobj.toString() + System.getProperty("line.separator"));
-						out.flush();
-						System.out.println("Sent JSON object");
-						
-					} catch (SQLException | JSONException e) {
-						e.printStackTrace();
-					}
+			ServerSocket server = null;
+			try {
+				server = new ServerSocket(PORT);
+			} catch (IOException e) {
+				System.out.println("Port already in use");
+				e.printStackTrace();
+				return;
+			}
+			while(true) {
+				Socket client;
+				System.out.println("waiting for client");
+				try {
+					client = server.accept();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					continue;
 				}
 				
-			} catch (IOException e) {
-				e.printStackTrace();
+				Thread connection = new Thread() {
+					
+					private Socket client;
+					private ServerSocket server;
+					
+					public Thread init(ServerSocket server, Socket client) {
+						this.server = server;
+						this.client = client;
+						return this;
+					}
+					
+					public void run() {
+						try {
+							OutputStreamWriter out = new OutputStreamWriter(client.getOutputStream(), StandardCharsets.UTF_8);
+							BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+
+							System.out.println("started WebServerServer");
+							String input, output;
+							while((input = in.readLine()) != null) {
+								
+								System.out.println("Processing WebServer request...");
+								if (input.equals("NEWDATA")) {
+									sendLatestDataVector(out);
+								} else {
+								
+									String[] timestamps = input.split(";");
+									for (String timestamp : timestamps) {
+										if (!isValidTimestamp(timestamp)) {
+											out.write("IMD" + System.getProperty("line.separator"));
+											out.flush();
+											System.out.println("Invalid message detected.");
+											continue;
+										}
+									}
+									
+									sendDataVectorsInRange(out, timestamps);
+								}
+							}
+						} catch (IOException e) {
+							System.out.println("Connection on Port 9001 to "+ client.getInetAddress() +" was closed.");
+							e.printStackTrace();
+						}
+					}
+
+					private void sendDataVectorsInRange(OutputStreamWriter out, String[] timestamps)
+							throws IOException {
+						registerDriver();
+						Connection conn = establishConnection();
+						System.out.println("Established DBConnection for WebServer.");
+						String query = "SELECT * FROM weatherdatalog WHERE timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
+						
+						try {
+							Statement statement = conn.createStatement();
+							ResultSet rs = statement.executeQuery(query);
+							System.out.println("Processed SQL query.");
+							JSONObject jretobj = new JSONObject();
+							int counter = 0;
+							while(rs.next()) {
+								JSONObject currentObject = new JSONObject();
+								currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
+								currentObject.put("owmtemperature", rs.getDouble("owmtemperature"));
+								currentObject.put("owmpressure", rs.getDouble("owmpressure"));
+								currentObject.put("owmhumidity", rs.getDouble("owmhumidity"));
+								currentObject.put("temperature", rs.getDouble("temperature"));
+								currentObject.put("pressure", rs.getDouble("pressure"));
+								currentObject.put("humidity", rs.getDouble("humidity"));
+								currentObject.put("sensorwindspeed", rs.getDouble("sensorwindspeed"));
+								currentObject.put("owmwindspeed", rs.getDouble("owmwindspeed"));
+								currentObject.put("owmwinddegree", rs.getDouble("owmwinddegree"));
+								currentObject.put("light", rs.getDouble("light"));
+								currentObject.put("owmweathername", rs.getString("owmweathername"));
+								currentObject.put("owmweatherdesc", rs.getString("owmweatherdesc"));
+								
+								System.out.println("Created current object");
+								
+								jretobj.put(Integer.toString(counter), currentObject);
+								counter++;
+							}
+							JSONObject tempObj = new JSONObject();
+							jretobj.put("length", counter);
+							out.write(jretobj.toString() + System.getProperty("line.separator"));
+							out.flush();
+							System.out.println("Sent JSON object");
+							
+						} catch (SQLException | JSONException e) {
+							System.out.println("Unable to retrieve data from specified interval.");
+							e.printStackTrace();
+							out.write("CNRD" + System.getProperty("line.separator"));
+							out.flush();
+						}
+					}
+
+					private void sendLatestDataVector(OutputStreamWriter out) throws IOException {
+						registerDriver();
+						Connection conn = establishConnection();
+						System.out.println("Established DBConnection for WebServer.");
+						String query = "SELECT * FROM weatherdatalog ORDER BY id DESC LIMIT 1;";
+						
+						try {
+							Statement statement = conn.createStatement();
+							ResultSet rs = statement.executeQuery(query);
+							System.out.println("Processed SQL query.");
+							JSONObject jretobj = new JSONObject();
+							while(rs.next()) {
+								JSONObject currentObject = new JSONObject();
+								currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
+								currentObject.put("owmtemperature", rs.getDouble("owmtemperature"));
+								currentObject.put("owmpressure", rs.getDouble("owmpressure"));
+								currentObject.put("owmhumidity", rs.getDouble("owmhumidity"));
+								currentObject.put("temperature", rs.getDouble("temperature"));
+								currentObject.put("pressure", rs.getDouble("pressure"));
+								currentObject.put("humidity", rs.getDouble("humidity"));
+								currentObject.put("sensorwindspeed", rs.getDouble("sensorwindspeed"));
+								currentObject.put("owmwindspeed", rs.getDouble("owmwindspeed"));
+								currentObject.put("owmwinddegree", rs.getDouble("owmwinddegree"));
+								currentObject.put("light", rs.getDouble("light"));
+								currentObject.put("owmweathername", rs.getString("owmweathername"));
+								currentObject.put("owmweatherdesc", rs.getString("owmweatherdesc"));
+								
+								System.out.println("Created current object");
+								
+								jretobj.put("0", currentObject);
+							}
+							JSONObject tempObj = new JSONObject();
+							jretobj.put("length", 1);
+							out.write(jretobj.toString() + System.getProperty("line.separator"));
+							out.flush();
+							System.out.println("Sent JSON object");
+							
+						} catch (SQLException | JSONException e) {
+							System.out.println("Unable to retrieve data from specified interval.");
+							e.printStackTrace();
+							out.write("CNRD" + System.getProperty("line.separator"));
+							out.flush();
+						}
+					}
+				}.init(server, client);
+				connection.start();
 			}
 		}
 	}

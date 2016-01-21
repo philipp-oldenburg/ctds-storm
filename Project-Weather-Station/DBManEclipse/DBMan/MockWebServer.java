@@ -10,8 +10,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MockWebServer extends Thread{
-	String hostName = "127.0.0.1";
-	int portNumber = 9001;
+	String hostName;
+	int portNumber;
+	
+	public MockWebServer(String host, int port) {
+		hostName = host;
+		portNumber = port;
+	}
 	
 	public void run() {
 		System.out.println("connecting");
