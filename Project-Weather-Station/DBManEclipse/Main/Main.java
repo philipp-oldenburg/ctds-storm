@@ -47,7 +47,7 @@ public class Main {
 		boolean sensorServerAvailable = true;
 		
 		if (!startImmediately) {
-			if (checkIfStringIsIPAddress(ipAddress)) {
+//			if (checkIfStringIsIPAddress(ipAddress)) {
 				try {
 					System.out.println("Looking for sensor server.");
 					client = new SensorClient(ipAddress);
@@ -70,10 +70,10 @@ public class Main {
 						sensorServerAvailable = false;
 					}
 				}
-			} else {
-				System.out.println("Given Parameter is not a valid IP address.");
-				client = standByForIP(client);
-			} 
+//			} else {
+//				System.out.println("Given Parameter is not a valid IP address.");
+//				client = standByForIP(client);
+//			} 
 		} else {
 			sensorServerAvailable = false;
 		}
