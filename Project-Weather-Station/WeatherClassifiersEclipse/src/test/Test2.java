@@ -1,8 +1,7 @@
 package test;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLDouble;
@@ -48,21 +47,8 @@ public class Test2 {
 //		System.out.println(Statistics.likelihood(clearCluster, cleartest));
 		
 //		-----------------------------------------------------------------------------------------------------------
-		File[] clusterFiles = new File("res").listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".cluster.mat");
-			}
-		});
-		ArrayList<Cluster> clusterList = new ArrayList<Cluster>();
-		for (File file : clusterFiles) {
-			String name = file.getName().substring(0, file.getName().indexOf('.'));
-			clusterList.add(Utils.readCluster(name, file));
-		}
+		List<Cluster> clusterList = Utils.loadClusters(new File("res"));
 		System.out.println(clusterList.size());
-		
-		double[] testv = {5.37222120496962, 996, 87, 5.61999988555908, 0, 0, 0, 0};
-		System.out.println(Statistics.maximumLikelihood(clusterList, testv));
 //		------------------------------------------------------------------------------------------------------------
 		
 		try {

@@ -1,6 +1,9 @@
 package utils;
 
 import java.io.File;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.jmatio.io.MatFileReader;
@@ -8,6 +11,27 @@ import com.jmatio.types.MLArray;
 import com.jmatio.types.MLDouble;
 
 public class Utils {
+	
+	public static List<Cluster> loadClusters(File directory) {
+		if (!directory.isDirectory()) {
+			throw new IllegalArgumentException("Bad directory");
+		}
+		File[] clusterFiles = directory.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.endsWith(".cluster.mat");
+			}
+		});
+		if (clusterFiles.length <= 0) {
+			throw new IllegalArgumentException("No clusters found. Clusters must end with '.cluster.mat'");
+		}
+		ArrayList<Cluster> clusterList = new ArrayList<Cluster>();
+		for (File file : clusterFiles) {
+			String name = file.getName().substring(0, file.getName().indexOf('.'));
+			clusterList.add(Utils.readCluster(name, file));
+		}
+		return clusterList;
+	}
 	
 	/**
 	 * Reads MatLab .mat file. Must include variables norm (scalar), mean (row vector), inv (quadratic matrix), prior (scalar)
@@ -45,33 +69,4 @@ public class Utils {
 		}
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-//	public static double[] getMean(List<DataPoint> dataPoints) {
-//		double n = dataPoints.size();
-//		double[] result = dataPoints.get(0).getData();
-//		for (int i = 1; i < n; i++) {
-//			double[] vector = dataPoints.get(i).getData();
-//			for (int j = 0; j < result.length; j++) {
-//				result[j] += vector[j];
-//			}
-//		}
-//		System.out.println(result[0]);
-//		for (int j = 0; j < result.length; j++) {
-//			result[j] /= n;
-//		}
-//		return result;
-//	}
 }
