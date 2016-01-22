@@ -77,7 +77,7 @@ public class DataBaseManager {
 	
 	private class DataCollector extends Thread {
 		
-		private static final long ACQUIREDATAINTERVAL = 30000;
+		private static final long ACQUIREDATAINTERVAL = 5000;
 		
 		private static final double TEMPDEFAULTVALUE = -300;
 		private static final double PRESDEFAULTVALUE = -1;
@@ -176,7 +176,7 @@ public class DataBaseManager {
 					System.out.println("Did not receive response from openweathermap within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
 					//e.printStackTrace();
 				}
-				
+				sensorServerAvailable = false;
 				try {
 					client.ping();
 					sensorServerAvailable = true;
@@ -184,7 +184,7 @@ public class DataBaseManager {
 				} catch (Exception e) {
 					sensorServerAvailable = false;
 					//e.printStackTrace();
-					System.out.println("Client unreachable. Trying to reconnect...");
+					System.out.println("SensorClient unreachable. Trying to reconnect...");
 					if (!reconnectorRunning) {
 						SCReconnector reconnector = new SCReconnector();
 						reconnector.start();
@@ -456,6 +456,9 @@ public class DataBaseManager {
 							provider.setCurrentClassifiedWeather(temp);
 							e.printStackTrace();
 						}
+//						if (temp != null) {
+//							System.out.println(temp.toString());
+//						} else System.out.println("JSONObject from ResultBolt is null.");
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -554,7 +557,7 @@ public class DataBaseManager {
 											sendDataVectorClosest(out, inputParts[0], null);
 										}
 									} else if (inputParts.length == 2) {
-										if(!isValidTimestamp(inputParts[0]) || !(inputParts[1].equals("OWM") && inputParts[1].equals("SENS")) ) {
+										if(!isValidTimestamp(inputParts[0]) || !(inputParts[1].equals("OWM") || inputParts[1].equals("SENS")) ) {
 											out.write("IMD" + System.getProperty("line.separator"));
 											out.flush();
 											System.out.println("Invalid message detected.");
@@ -622,10 +625,10 @@ public class DataBaseManager {
 						System.out.println("Established DBConnection for WebServer.");
 						String query = "";
 						if (input != null && input.equals("OWM")) {
-							query += "SELECT owmtemperature, owmpressure, owmhumidity, owmwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
+							query += "SELECT timestamp, owmtemperature, owmpressure, owmhumidity, owmwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
 							query += "AND owmtemperature <> '-300' AND owmpressure <> '-1' AND owmhumidity <> '-1' AND owmwindspeed <> '-1' ";
 						} else if (input != null && input.equals("SENS")) {
-							query += "SELECT temperature, pressure, humidity, sensorwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
+							query += "SELECT timestamp, temperature, pressure, humidity, sensorwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
 							query += "AND temperature <> '-300' AND pressure <> '-1' AND humidity <> '-1' AND sensorwindspeed <> '-1' ";
 						}
 						query += "ORDER BY id DESC LIMIT 1;";
