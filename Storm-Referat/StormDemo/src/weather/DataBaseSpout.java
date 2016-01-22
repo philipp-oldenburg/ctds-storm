@@ -6,6 +6,9 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 
 import org.json.JSONException;
@@ -32,6 +35,8 @@ public class DataBaseSpout implements IRichSpout {
 	
 	private static final String SERVER_IP = "192.168.2.125";
 	private static final int SERVER_PORT = 9001;
+	
+	private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	@Override
 	public void ack(Object arg0) {}
@@ -60,25 +65,62 @@ public class DataBaseSpout implements IRichSpout {
 	    }
 	    Utils.sleep(50);
 	}
+	
+//	new Values(
+//		"2015-12-23 15:37:31",
+//		6.122222476535374, 995.0, 75.0, 3.240000009536743,
+//		5.822221967909072, 996.0, 81.0, 4.539999961853027);
 
 	private Values fetchReading() {
 		String reading = null;
 		try {
 			reading = requestAndWaitForResponse("NEWOWM");
-			JSONObject json = new JSONObject(reading);
-			System.err.println(json.getString("timestamp"));//TODO remove
+			System.out.println(reading);
+			JSONObject wrapperjson = new JSONObject(reading);
+			if (wrapperjson != null && wrapperjson.has("0")) {
+				JSONObject json = (JSONObject) wrapperjson.get("0");
+				if (json != null) {
+					String timestamp = json.getString("timestamp");
+					long time;
+					try {
+						time = TIMESTAMP_FORMAT.parse(timestamp).getTime();
+					} catch (ParseException e) {
+						time = System.currentTimeMillis();
+					}
+					String newTimeStamp = TIMESTAMP_FORMAT.format(new Date(time - 3600000));
+					reading = requestAndWaitForResponse(newTimeStamp + ";OWM");
+					System.out.println(reading);
+					wrapperjson = new JSONObject(reading);
+					if (wrapperjson != null && wrapperjson.has("0")) {
+						JSONObject jsonOld = (JSONObject) wrapperjson.get("0");
+						if (jsonOld != null) {
+							return new Values(
+									json.getString("timestamp"),
+									json.getDouble("owmtemperature"),
+									json.getDouble("owmpressure"),
+									json.getDouble("owmhumidity"),
+									json.getDouble("owmwindspeed"),
+									jsonOld.getDouble("temperature"),
+									jsonOld.getDouble("pressure"),
+									jsonOld.getDouble("humidity"),
+									jsonOld.getDouble("windspeed"));
+						}
+					}
+				}
+			}
 			
+			return null;
 		} catch (IOException e) {
 			System.err.println("IO exception in fetchReading() in DataBaseSpout: " + e.getMessage());
 			return null;
 		} catch (JSONException e) {
 			System.err.println("JSON exception in fetchReading() in DataBaseSpout: " + e.getMessage());
 			return null;
+		} catch (Exception e) {
+			System.err.println("Unknown exception in fetchReading() in DataBaseSpout: " + e.getMessage());
+			return null;
 		}
-		return new Values( //TODO remove
-        		"2015-12-23 15:37:31",
-        		6.122222476535374, 995.0, 75.0, 3.240000009536743,
-        		5.822221967909072, 996.0, 81.0, 4.539999961853027);
+		
 	}
 	
 	private String requestAndWaitForResponse(String request) throws IOException{
@@ -97,7 +139,7 @@ public class DataBaseSpout implements IRichSpout {
 			din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			socket.setSoTimeout(2000);
 		} catch (IOException e1) {
-			System.err.println("COULD NOT CONNECT TO SERVER ON IP " + SERVER_IP + " PORT " + SERVER_PORT);
+			System.err.println("DAT: COULD NOT CONNECT TO SERVER ON IP " + SERVER_IP + " PORT " + SERVER_PORT);
 			e1.printStackTrace();
 		}
 		collector = arg2;
