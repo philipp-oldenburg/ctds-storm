@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="Libs/asm-4.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/carbonite-1.4.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/chill-java-0.3.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/clj-stacktrace-0.2.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/clj-time-0.4.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/clojure-1.5.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/clout-1.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/commons-codec-1.6.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/commons-exec-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/commons-fileupload-1.2.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/commons-io-2.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/commons-lang-2.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/commons-logging-1.1.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/compojure-1.1.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/core.incubator-0.1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/disruptor-2.10.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/hiccup-0.3.6.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/jetty-6.1.26.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/jetty-util-6.1.26.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/jgrapht-core-0.9.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/jline-2.11.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/joda-time-2.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/json-simple-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/kryo-2.21.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/log4j-over-slf4j-1.6.6.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/logback-classic-1.0.13.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/logback-core-1.0.13.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/math.numeric-tower-0.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/minlog-1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/objenesis-1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/reflectasm-1.07-shaded.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/ring-core-1.1.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/ring-devel-0.3.11.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/ring-jetty-adapter-0.3.11.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/ring-servlet-0.3.11.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/servlet-api-2.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/slf4j-api-1.7.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/snakeyaml-1.11.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/storm-core-0.9.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/tools.cli-0.2.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/tools.logging-0.2.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="Libs/tools.macro-0.1.0.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-core-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-dense64-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-denseC64-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-equation-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-simple-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/jmatio.jar"/>
+	<classpathentry kind="lib" path="mathLibs/org.apache.felix.webconsole-1.0.0.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
