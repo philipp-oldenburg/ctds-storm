@@ -1,5 +1,6 @@
 import socket
 import thread
+import json
 import Adafruit_BMP.BMP085 as BMP085
 from HDC1008 import HDC1008
 from tsl2561 import TSL2561
@@ -37,6 +38,14 @@ def handler():
                 conn.send('{0}\n'.format(sensor3.lux()))
             elif msg == "PING":
                 conn.send('{0}\n'.format("PONG"))
+            elif msg == "ALLD":
+                data = sensor2.pollsensordata()
+                dicti = {}
+                dicti['temperature'] = data["temp"]
+                dicti['humidity'] = data["humi"]
+                dicti['pressure'] = sensor.read_pressure()
+                dicti['luminosity'] = sensor3.lux()
+                conn.send(json.dumps(dicti, ensure_ascii=False) + "\n")
             else:
                 print "received message in conflict with our protocol"
     except Exception as e:
