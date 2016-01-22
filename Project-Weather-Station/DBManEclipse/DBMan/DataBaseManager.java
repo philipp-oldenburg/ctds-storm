@@ -78,7 +78,7 @@ public class DataBaseManager {
 	
 	private class DataCollector extends Thread {
 		
-		private static final long ACQUIREDATAINTERVAL = 5000;
+		private static final long ACQUIREDATAINTERVAL = 15000;
 		
 		private static final double TEMPDEFAULTVALUE = -300;
 		private static final double PRESDEFAULTVALUE = -1;
