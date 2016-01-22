@@ -33,7 +33,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		socket.setSoTimeout(1000);
+		socket.setSoTimeout(1500);
 		sensorServerAddress = serverIP;
 	}
 	
@@ -43,12 +43,14 @@ public class SensorClient implements SensorClientInterface {
 	@Override
 	public double getTemperature() {
 		String res;
+		double result;
 		try {
 			res = requestAndWaitForResponse("TEMP");
+			result = (res == null) ? -300 : Double.valueOf(res);
 		} catch (IOException e) {
 			return -300;
 		}
-		return res == null ? -300: Double.valueOf(res);
+		return result;
 	}
 	
 	/* (non-Javadoc)
@@ -57,12 +59,14 @@ public class SensorClient implements SensorClientInterface {
 	@Override
 	public double getPressure() {
 		String res;
+		double result;
 		try {
 			res = requestAndWaitForResponse("PRES");
+			result = (res == null) ? -300 : Double.valueOf(res);
 		} catch (IOException e) {
 			return -1;
 		}
-		return res == null ? -1: Double.valueOf(res);
+		return result;
 	}
 	
 	/* (non-Javadoc)
@@ -71,12 +75,14 @@ public class SensorClient implements SensorClientInterface {
 	@Override
 	public double getAltitude() {
 		String res;
+		double result;
 		try {
 			res = requestAndWaitForResponse("ALTI");
+			result = (res == null) ? -300 : Double.valueOf(res);
 		} catch (IOException e) {
 			return -1;
 		}
-		return res == null ? -1: Double.valueOf(res);
+		return result;
 	}
 	
 	/* (non-Javadoc)
@@ -85,12 +91,14 @@ public class SensorClient implements SensorClientInterface {
 	@Override
 	public double getSealevelPressure() {
 		String res;
+		double result;
 		try {
 			res = requestAndWaitForResponse("SEAL");
+			result = (res == null) ? -300 : Double.valueOf(res);
 		} catch (IOException e) {
 			return -1;
 		}
-		return res == null ? -1: Double.valueOf(res);
+		return result;
 	}
 	
 	/* (non-Javadoc)
@@ -99,12 +107,14 @@ public class SensorClient implements SensorClientInterface {
 	@Override
 	public double getHumidity() {
 		String res;
+		double result;
 		try {
 			res = requestAndWaitForResponse("HUMI");
+			result = (res == null) ? -300 : Double.valueOf(res);
 		} catch (IOException e) {
 			return -1;
 		}
-		return res == null ? -1: Double.valueOf(res);
+		return result;
 	}
 	
 	/* (non-Javadoc)
@@ -113,12 +123,14 @@ public class SensorClient implements SensorClientInterface {
 	@Override
 	public double getLight() {
 		String res;
+		double result;
 		try {
 			res = requestAndWaitForResponse("LUMI");
+			result = (res == null) ? -300 : Double.valueOf(res);
 		} catch (IOException e) {
 			return -1;
 		}
-		return res == null ? -1: Double.valueOf(res);
+		return result;
 	}
 	
 	public double getWindSpeed() {
@@ -144,13 +156,13 @@ public class SensorClient implements SensorClientInterface {
 	
 	public boolean ping() throws IOException {
 		String res = "";
-		
 		res = requestAndWaitForResponse("PING");
 		
 		return res.equals("PONG");
 	}
 	
 	private String requestAndWaitForResponse(String request) throws IOException{
+		
 		dout.println(request);
 		dout.flush();
 		

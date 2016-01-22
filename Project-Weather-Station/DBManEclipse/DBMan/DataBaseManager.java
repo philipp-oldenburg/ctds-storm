@@ -111,7 +111,7 @@ public class DataBaseManager {
 				while (true) {
 					try {
 						client = new SensorClient(sensorServerAddress);
-						System.out.println("created new client");
+						System.out.println("created new SensorClient");
 						sensorServerAvailable = true;
 						break;
 					} catch(Exception e) {
@@ -173,7 +173,7 @@ public class DataBaseManager {
 					//e.printStackTrace();
 				} catch (TimeoutException e) {
 					weathermapAccessible = false;
-					System.out.println("Did not receive response within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
+					System.out.println("Did not receive response from openweathermap within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
 					//e.printStackTrace();
 				}
 				
@@ -621,10 +621,10 @@ public class DataBaseManager {
 						Connection conn = establishConnection();
 						System.out.println("Established DBConnection for WebServer.");
 						String query = "";
-						if (input.equals("OWM")) {
+						if (input != null && input.equals("OWM")) {
 							query += "SELECT owmtemperature, owmpressure, owmhumidity, owmwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
 							query += "AND owmtemperature <> '-300' AND owmpressure <> '-1' AND owmhumidity <> '-1' AND owmwindspeed <> '-1' ";
-						} else if (input.equals("SENS")) {
+						} else if (input != null && input.equals("SENS")) {
 							query += "SELECT temperature, pressure, humidity, sensorwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
 							query += "AND temperature <> '-300' AND pressure <> '-1' AND humidity <> '-1' AND sensorwindspeed <> '-1' ";
 						}
