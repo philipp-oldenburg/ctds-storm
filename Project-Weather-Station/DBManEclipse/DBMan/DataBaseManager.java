@@ -354,8 +354,12 @@ public class DataBaseManager {
 			System.out.println("set pres");
 			data.setHumidity(client.getHumidity());
 			System.out.println("set hum");
-			data.setSensorWindSpeed(client.getWindSpeed());
-			System.out.println("set ws");
+			try {
+				data.setSensorWindSpeed(client.getWindSpeed());
+				System.out.println("set ws");
+			} catch (Exception e) {
+				data.setSensorWindSpeed(-1);
+			}
 			data.setLight(client.getLight());
 			System.out.println("set light");
 		}
@@ -380,7 +384,7 @@ public class DataBaseManager {
 			this.client = client;
 			this.sensorServerAvailable = sensorServerAvailable;
 			if (client == null) {
-				sensorServerAddress = "192.168.2.123";
+				sensorServerAddress = "deffi.thecuslink.com";
 			} else {
 				sensorServerAddress = client.getSensorServerAddress();
 			}

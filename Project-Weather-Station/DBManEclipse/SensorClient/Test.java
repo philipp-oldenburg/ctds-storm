@@ -30,6 +30,7 @@ public class Test {
 			System.out.println(client.getLight());
 			System.out.println(client.getWindSpeed());
 			JSONObject obj = client.getAllData();
+			
 			try {
 				System.out.println(obj.get("temperature"));
 				System.out.println(obj.get("pressure"));
@@ -39,6 +40,15 @@ public class Test {
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
+			 while(true) {
+				long time = System.currentTimeMillis();
+				try {
+					client.ping();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				System.out.println("RTT: " + (System.currentTimeMillis() - time));
+			 }
 		} else System.out.println("Rekt");
 	}
 

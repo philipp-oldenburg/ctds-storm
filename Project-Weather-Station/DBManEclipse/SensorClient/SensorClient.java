@@ -33,7 +33,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		socket.setSoTimeout(2000);
+		socket.setSoTimeout(1000);
 		sensorServerAddress = serverIP;
 	}
 	
@@ -129,7 +129,6 @@ public class SensorClient implements SensorClientInterface {
 			try {
 				return Double.parseDouble(is.readLine());
 			} finally {
-				System.out.println("test");
 				is.close();
 			}
 		} catch (MalformedURLException e) {
