@@ -1,5 +1,4 @@
 import java.util.Map;
-import java.util.stream.Collector;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;

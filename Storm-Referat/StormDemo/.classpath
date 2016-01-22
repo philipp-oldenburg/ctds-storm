@@ -44,5 +44,12 @@
 	<classpathentry exported="true" kind="lib" path="Libs/tools.logging-0.2.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="Libs/tools.macro-0.1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-core-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-dense64-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-denseC64-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-equation-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/EJML-simple-0.28.jar"/>
+	<classpathentry kind="lib" path="mathLibs/jmatio.jar"/>
+	<classpathentry kind="lib" path="mathLibs/org.apache.felix.webconsole-1.0.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
