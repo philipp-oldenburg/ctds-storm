@@ -1,9 +1,10 @@
 package weather;
 
 import backtype.storm.Config;
-import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
+import backtype.storm.generated.AlreadyAliveException;
+import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.utils.Utils;
 
 public class Starter {
 
@@ -17,13 +18,21 @@ public class Starter {
 		builder.setBolt("rcbolt", new ReceptionBolt(), 1).shuffleGrouping("cfbolt");
 
 		Config conf = new Config();
-		conf.setDebug(true);
+		conf.setNumWorkers(2);
+//		conf.setDebug(true);
 
-		LocalCluster cluster = new LocalCluster();
-		cluster.submitTopology("test", conf, builder.createTopology());
-		Utils.sleep(100000);
-		cluster.killTopology("test");
-		cluster.shutdown();
+//		LocalCluster cluster = new LocalCluster();
+//		cluster.submitTopology("test", conf, builder.createTopology());
+//		Utils.sleep(100000);
+//		cluster.killTopology("test");
+//		cluster.shutdown();
+		
+		try {
+			StormSubmitter.submitTopology("helloworldtopology", conf, builder.createTopology());
+		} catch (AlreadyAliveException | InvalidTopologyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

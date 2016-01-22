@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Map;
 
 import org.json.JSONException;
@@ -25,7 +24,7 @@ public class ReceptionBolt implements IRichBolt {
 	private PrintWriter dout;
 	private BufferedReader din;
 	
-	private static final String SERVER_IP = "192.168.2.125";
+	private static final String SERVER_IP = "192.168.2.124";
 	private static final int SERVER_PORT = 9002;
 
 	@Override
@@ -59,9 +58,7 @@ public class ReceptionBolt implements IRichBolt {
 		dout.flush();
 		
 	}
-
 	
-
 	@Override
 	public void prepare(Map arg0, TopologyContext arg1, OutputCollector arg2) {
 		
