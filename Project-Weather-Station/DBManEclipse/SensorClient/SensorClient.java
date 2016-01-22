@@ -7,6 +7,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import net.aksingh.owmjapis.CurrentWeather;
 
@@ -121,7 +122,25 @@ public class SensorClient implements SensorClientInterface {
 	}
 	
 	public double getWindSpeed() {
-		return -1.0;
+		try {
+			URL url = new URL("http://192.168.2.222:8080");
+			BufferedReader is = new BufferedReader(new InputStreamReader(url.openStream()));
+			
+			try {
+				return Double.parseDouble(is.readLine());
+			} finally {
+				System.out.println("test");
+				is.close();
+			}
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return -1;
+		
 	}
 	
 	public boolean ping() throws IOException {
@@ -149,5 +168,20 @@ public class SensorClient implements SensorClientInterface {
 
 	public String getSensorServerAddress() {
 		return sensorServerAddress;
+	}
+
+	@Override
+	public JSONObject getAllData() {
+		String json = null;
+		try {
+			json = requestAndWaitForResponse("ALLD");
+		} catch (IOException e) {
+			return null;
+		}
+		try {
+			return new JSONObject(json);
+		} catch (JSONException e) {
+			return null;
+		}
 	}
 }
