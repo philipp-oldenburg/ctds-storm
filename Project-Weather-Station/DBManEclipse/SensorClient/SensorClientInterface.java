@@ -1,5 +1,7 @@
 import java.io.IOException;
 
+import org.json.JSONObject;
+
 public interface SensorClientInterface {
 
 
@@ -50,6 +52,12 @@ public interface SensorClientInterface {
 	 * @return ^
 	 */
 	String getSensorServerAddress();
+	
+	/**Returns all data in JSON. Placeholder until better solution is found.
+	 * 
+	 * @return JSON Object or null if data could not be retrieved or received data is no valid JSON String
+	 */
+	JSONObject getAllData();
 	
 	public boolean ping() throws IOException;
 

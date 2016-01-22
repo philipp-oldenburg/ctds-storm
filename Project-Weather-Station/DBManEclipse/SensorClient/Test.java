@@ -1,12 +1,15 @@
 import java.io.IOException;
 import java.net.UnknownHostException;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Test {
 
 	public static void main(String[] args) {
 		SensorClientInterface client = null;
 		try {
-			client = new SensorClient("192.168.2.123");
+			client = new SensorClient("deffi.thecuslink.com");
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -25,6 +28,17 @@ public class Test {
 			System.out.println(client.getSealevelPressure());
 			System.out.println("LUMI");
 			System.out.println(client.getLight());
+			System.out.println(client.getWindSpeed());
+			JSONObject obj = client.getAllData();
+			try {
+				System.out.println(obj.get("temperature"));
+				System.out.println(obj.get("pressure"));
+				System.out.println(obj.get("luminosity"));
+				System.out.println(obj.get("humidity"));
+				
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 		} else System.out.println("Rekt");
 	}
 
