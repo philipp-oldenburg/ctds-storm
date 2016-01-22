@@ -35,6 +35,8 @@ import net.aksingh.owmjapis.OpenWeatherMap;
 
 public class DataBaseManager {
 	
+	private static final int BOLTPORT = 9002;
+
 	private DataCollector collector;
 	
 	private String url = "jdbc:mysql://localhost:3306/ctds_db_test";
@@ -97,6 +99,11 @@ public class DataBaseManager {
 		private OpenWeatherMap owmap;
 		
 		private class SCReconnector extends Thread {
+			private DataCollector collector;
+			
+//			private SCReconnector(DataCollector coll) {
+//				collector = coll;
+//			}
 			
 			public void run() {
 				reconnectorRunning = true;
@@ -398,6 +405,62 @@ public class DataBaseManager {
 		
 		DataProvider provider = new DataProvider();
 		provider.start();
+		
+		
+		
+		ServerSocket boltServer = null;
+		try {
+			boltServer = new ServerSocket(BOLTPORT);
+		} catch (IOException e) {
+			System.out.println("Port already in use");
+			e.printStackTrace();
+			return;
+		}
+		
+		Socket resultBolt = null;
+		System.out.println("waiting for result Bolt");
+		try {
+			resultBolt = boltServer.accept();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		Thread resultBoltConnection = new Thread() {
+			
+			private Socket client;
+			private ServerSocket server;
+			private DataProvider provider;
+			
+			public Thread init(ServerSocket server, Socket client, DataProvider provider) {
+				this.server = server;
+				this.client = client;
+				this.provider = provider;
+				return this;
+			}
+			public void run() {
+				try {
+					OutputStreamWriter out = new OutputStreamWriter(client.getOutputStream(), StandardCharsets.UTF_8);
+					BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+					
+					String input;
+					
+					while((input = in.readLine()) != null) {
+						JSONObject temp = null;
+						try {
+							temp = new JSONObject(input);
+						} catch (Exception e) {
+							provider.setCurrentClassifiedWeather(temp);
+							e.printStackTrace();
+						}
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			
+		}.init(boltServer, resultBolt, provider);
+		resultBoltConnection.start();
+		
 	}
 	
 	/**Checks if given String is of the following SimpleDateFormat: "yyyy-MM-dd HH:mm:ss"
@@ -418,6 +481,11 @@ public class DataBaseManager {
 	private class DataProvider extends Thread {
 		
 		private static final int PORT = 9001;
+		private JSONObject currentClassifiedWeather;
+		
+		public void setCurrentClassifiedWeather(JSONObject obj) {
+			currentClassifiedWeather = obj;
+		}
 		
 		/**Waits for connection on port 9001 and accepts connection in new thread, providing the following methods for acquisition of data:<br>
 		 * 	-Replies to "NEWOWM" with latest data tuple which contains valid owm data.<br>
@@ -425,8 +493,8 @@ public class DataBaseManager {
 		 * 	-Replies to "yyyy-MM-dd HH:mm:ss" with the data tuple which is closest, yet still older than the given timestamp.<br>
 		 * 	-Replies to "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd HH:mm:ss;(distinct)" with all data tuples in specified interval. Replace (distinct) with either
 		 * 	"TRUE" or "FALSE" to get distinct or all results.<br>
-		 * 	-Replies to "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd HH:mm:ss;(distinct);(arg1);(arg2);...;(argX)" with all  data tuples in specified interval. Replace (distinct)
-		 *  with either "TRUE" or "FALSE" to get distinct or all results. Use args to specify the columns which shall be returned.<br>
+		 * 	-Replies to "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd HH:mm:ss;(distinct);(arg0);(arg1);...;(argX)" with all  data tuples in specified interval. Replace
+		 * 	(distinct) with either "TRUE" or "FALSE" to get distinct or all results. Use args to specify the columns which shall be returned.<br>
 		 * Error codes: "CNRD" if data could not be read (Due to SQL or JSONException), "IMD" if invalid message is detected.
 		 */
 		public void run() {
@@ -479,7 +547,16 @@ public class DataBaseManager {
 											System.out.println("Invalid message detected.");
 										} else {
 											System.out.println("Requested closest data Vector");
-											sendDataVectorClosest(out, inputParts[0]);
+											sendDataVectorClosest(out, inputParts[0], null);
+										}
+									} else if (inputParts.length == 2) {
+										if(!isValidTimestamp(inputParts[0]) || !(inputParts[1].equals("OWM") && inputParts[1].equals("SENS")) ) {
+											out.write("IMD" + System.getProperty("line.separator"));
+											out.flush();
+											System.out.println("Invalid message detected.");
+										} else {
+											System.out.println("Requested newest meaningful data vector older than timestamp");
+											sendDataVectorClosest(out, inputParts[0], inputParts[1]);
 										}
 									} else if (inputParts.length == 3) {
 										
@@ -534,12 +611,20 @@ public class DataBaseManager {
 						}
 					}
 					
-					private void sendDataVectorClosest(OutputStreamWriter out, String timestamp) throws IOException {
+					private void sendDataVectorClosest(OutputStreamWriter out, String timestamp, String input) throws IOException {
 						
 						registerDriver();
 						Connection conn = establishConnection();
 						System.out.println("Established DBConnection for WebServer.");
-						String query = "SELECT * FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ORDER BY id DESC LIMIT 1;";
+						String query = "";
+						if (input.equals("OWM")) {
+							query += "SELECT owmtemperature, owmpressure, owmhumidity, owmwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
+							query += "AND owmtemperature <> '-300' AND owmpressure <> '-1' AND owmhumidity <> '-1' AND owmwindspeed <> '-1' ";
+						} else if (input.equals("SENS")) {
+							query += "SELECT temperature, pressure, humidity, sensorwindspeed FROM weatherdatalog WHERE timestamp < '"+ timestamp +"' ";
+							query += "AND temperature <> '-300' AND pressure <> '-1' AND humidity <> '-1' AND sensorwindspeed <> '-1' ";
+						}
+						query += "ORDER BY id DESC LIMIT 1;";
 						
 						try {
 							Statement statement = conn.createStatement();
@@ -547,8 +632,20 @@ public class DataBaseManager {
 							System.out.println("Processed SQL query.");
 							JSONObject jretobj = new JSONObject();
 							while(rs.next()) {
-								JSONObject currentObject = initCurrentJSONObject(rs);
-								
+								JSONObject currentObject = new JSONObject();
+								if (input.equals("OWM")) {
+									currentObject.put("temperature", Double.toString(rs.getDouble("owmtemperature")));
+									currentObject.put("pressure", Double.toString(rs.getDouble("owmpressure")));
+									currentObject.put("humidity", Double.toString(rs.getDouble("owmhumidity")));
+									currentObject.put("windspeed", Double.toString(rs.getDouble("owmwindspeed")));
+									currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
+								} else if (input.equals("SENS")) {
+									currentObject.put("temperature", Double.toString(rs.getDouble("temperature")));
+									currentObject.put("pressure", Double.toString(rs.getDouble("pressure")));
+									currentObject.put("humidity", Double.toString(rs.getDouble("humidity")));
+									currentObject.put("windspeed", Double.toString(rs.getDouble("sensorwindspeed")));
+									currentObject.put("timestamp", rs.getTimestamp("timestamp").toString());
+								}
 								jretobj.put("0", currentObject);
 							}
 							jretobj.put("length", 1);
@@ -656,7 +753,7 @@ public class DataBaseManager {
 						if (input.equals("NEWOWM")) {
 							query += "WHERE owmtemperature <> '-300' AND owmpressure <> '-1' AND owmhumidity <> '-1' AND owmwindspeed <> '-1' ";
 						} else {
-							query += "WHERE temperature <> '-300' AND pressure <> '-1' AND humidity <> '-1' AND light <> '-1' ";
+							query += "WHERE temperature <> '-300' AND pressure <> '-1' AND humidity <> '-1' AND sensorwindspeed <> '-1' ";
 						}
 						
 						query += "ORDER BY id DESC LIMIT 1;";

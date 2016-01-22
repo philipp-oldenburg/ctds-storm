@@ -5,6 +5,8 @@ import java.util.Scanner;
 
 public class Main {
 	
+	private static boolean startImmediately;
+
 	/**Checks if given input String is of the type "a.b.c.d" where 0 <= a, b, c, d <= 255.
 	 * 
 	 * @param address The IP address that shall be verified
@@ -34,16 +36,17 @@ public class Main {
 		SensorClientInterface client = null;
 		String ipAddress = null;
 		boolean requireSensorServerAvailable = false;
-		if (args.length == 2) {
+		if (args.length == 3) {
 			requireSensorServerAvailable = Boolean.parseBoolean(args[1]);
 			ipAddress = args[0];
+			startImmediately = Boolean.parseBoolean(args[2]);
 		}else if (args.length == 1) {
 			ipAddress = args[0];
 		}
 
 		boolean sensorServerAvailable = true;
 		
-		if (requireSensorServerAvailable) {
+		if (!startImmediately) {
 			if (checkIfStringIsIPAddress(ipAddress)) {
 				try {
 					System.out.println("Looking for sensor server.");
