@@ -33,7 +33,7 @@ public class SensorClient implements SensorClientInterface {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		socket.setSoTimeout(1000);
+		socket.setSoTimeout(2000);
 		sensorServerAddress = serverIP;
 	}
 	
@@ -41,16 +41,17 @@ public class SensorClient implements SensorClientInterface {
 	 * @see SensorClientInterface#getTemperature()
 	 */
 	@Override
-	public double getTemperature() {
+	public double getTemperature() throws IOException {
 		String res;
 		double result;
 		for(int i=0; i < 5; i++) {
-			try {
+//			try {
 				res = requestAndWaitForResponse("TEMP");
 				result = (res == null) ? -300 : Double.valueOf(res);
-			} catch (IOException e) {
-				continue;
-			}
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				continue;
+//			}
 			return result;
 		}
 		return -300;
@@ -60,16 +61,17 @@ public class SensorClient implements SensorClientInterface {
 	 * @see SensorClientInterface#getPressure()
 	 */
 	@Override
-	public double getPressure() {
+	public double getPressure() throws IOException {
 		String res;
 		double result;
 		for(int i=0; i < 5; i++) {
-			try {
+//			try {
 				res = requestAndWaitForResponse("PRES");
 				result = (res == null) ? -1 : Double.valueOf(res);
-			} catch (IOException e) {
-				continue;
-			}
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				continue;
+//			}
 			return result;
 		}
 		return -1;
@@ -147,16 +149,17 @@ public class SensorClient implements SensorClientInterface {
 	 * @see SensorClientInterface#getHumidity()
 	 */
 	@Override
-	public double getHumidity() {
+	public double getHumidity() throws IOException {
 		String res;
 		double result;
 		for(int i=0; i < 5; i++) {
-			try {
+//			try {
 				res = requestAndWaitForResponse("HUMI");
 				result = (res == null) ? -1 : Double.valueOf(res);
-			} catch (IOException e) {
-				continue;
-			}
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				continue;
+//			}
 			return result;
 		}
 		return -1;
@@ -201,7 +204,7 @@ public class SensorClient implements SensorClientInterface {
 //		return result;
 	}
 	
-	public double getWindSpeed() {
+	public double getWindSpeed() throws IOException {
 		try {
 			URL url = new URL("http://192.168.2.222:8080");
 			BufferedReader is = new BufferedReader(new InputStreamReader(url.openStream()));
@@ -214,10 +217,14 @@ public class SensorClient implements SensorClientInterface {
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (NumberFormatException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		} 
+//		catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		return -1;
 		
 	}
@@ -225,16 +232,25 @@ public class SensorClient implements SensorClientInterface {
 	public boolean ping() throws IOException {
 		String res = "";
 		res = requestAndWaitForResponse("PING");
-		System.out.println(res.equals("PONG"));
+//		System.out.println(res.equals("PONG"));
 		return res.equals("PONG");
 	}
 	
 	private String requestAndWaitForResponse(String request) throws IOException{
+//		if (din.ready()) {
+//			System.out.println("--------------------------------");
+//			while(din.ready()) {
+//				System.out.print(din.read());
+//			}
+//			System.out.print(System.getProperty("line.separator"));
+//			System.out.println("--------------------------------");
+//		}
 		
 		dout.println(request);
 		dout.flush();
 		System.out.println("Sent request: " + request);
 		String res = din.readLine();
+		if (res == null) throw new IOException();
 		System.out.println(" and received response: " + res);
 		return res;
 	}

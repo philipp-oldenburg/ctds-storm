@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -99,7 +100,6 @@ public class DataBaseManager {
 		private OpenWeatherMap owmap;
 		
 		private class SCReconnector extends Thread {
-			private DataCollector collector;
 			
 //			private SCReconnector(DataCollector coll) {
 //				collector = coll;
@@ -112,7 +112,7 @@ public class DataBaseManager {
 					try {
 						client = new SensorClient(sensorServerAddress);
 						System.out.println("created new SensorClient");
-						sensorServerAvailable = true;
+//						sensorServerAvailable = true;
 						break;
 					} catch(Exception e) {
 						System.out.println("Could not reconnect to SensorServer. Still trying...");
@@ -157,7 +157,9 @@ public class DataBaseManager {
 			
 			
 			while(true) {
-				
+				System.out.println("---------------------------------------");
+				Date date = new Date();
+				System.out.println(date.toString());
 				CurrentWeather currentWeather = null;
 				try {
 					weathermapAccessible = true;
@@ -176,20 +178,20 @@ public class DataBaseManager {
 					System.out.println("Did not receive response from openweathermap within "+WEATHER_REQUEST_TIMEOUT+" seconds.");
 					//e.printStackTrace();
 				}
-				sensorServerAvailable = false;
-				try {
-					client.ping();
-					sensorServerAvailable = true;
-					System.out.println("SensorServer is available");
-				} catch (Exception e) {
-					sensorServerAvailable = false;
-					//e.printStackTrace();
-					System.out.println("SensorClient unreachable. Trying to reconnect...");
-					if (!reconnectorRunning) {
-						SCReconnector reconnector = new SCReconnector();
-						reconnector.start();
-					}
-				}
+				sensorServerAvailable = true;
+//				try {
+//					client.ping();
+//					sensorServerAvailable = true;
+//					System.out.println("SensorServer is available");
+//				} catch (Exception e) {
+//					sensorServerAvailable = false;
+//					//e.printStackTrace();
+//					System.out.println("SensorClient unreachable. Trying to reconnect...");
+//					if (!reconnectorRunning) {
+//						SCReconnector reconnector = new SCReconnector();
+//						reconnector.start();
+//					}
+//				}
 				
 				System.out.println("Creating WeatherData object...");
 				
@@ -348,19 +350,56 @@ public class DataBaseManager {
 		 * @param data	WeatherData object to be initialized.
 		 */
 		private void initWDwithSensorData(WeatherData data) {
-			data.setTemp(client.getTemperature());
+			
+			try {
+				data.setTemp(client.getTemperature());
+			} catch (Exception e) {
+				data.setTemp(TEMPDEFAULTVALUE);
+				System.out.println("SensorClient unreachable.");
+				if (!reconnectorRunning) {
+					SCReconnector reconnector = new SCReconnector();
+					reconnector.start();
+				}
+			}
 			System.out.println("set temp");
-			data.setPressure(client.getPressure()/100);
+			
+			try {
+				data.setPressure(client.getPressure()/100);
+			} catch (Exception e) {
+				data.setPressure(PRESDEFAULTVALUE);
+				System.out.println("SensorClient unreachable.");
+				if (!reconnectorRunning) {
+					SCReconnector reconnector = new SCReconnector();
+					reconnector.start();
+				}
+			}
 			System.out.println("set pres");
-			data.setHumidity(client.getHumidity());
+			
+			try {
+				data.setHumidity(client.getHumidity());
+			} catch (Exception e) {
+				data.setHumidity(HUMDEFAULTVALUE);
+				System.out.println("SensorClient unreachable.");
+				if (!reconnectorRunning) {
+					SCReconnector reconnector = new SCReconnector();
+					reconnector.start();
+				}
+			}
 			System.out.println("set hum");
+			
 			try {
 				data.setSensorWindSpeed(client.getWindSpeed());
-				System.out.println("set ws");
 			} catch (Exception e) {
-				data.setSensorWindSpeed(-1);
+				data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
+				System.out.println("SensorClient unreachable.");
+				if (!reconnectorRunning) {
+					SCReconnector reconnector = new SCReconnector();
+					reconnector.start();
+				}
 			}
-			data.setLight(client.getLight());
+			System.out.println("set ws");
+			
+			data.setLight(LIGHTDEFAULTVALUE);
 			System.out.println("set light");
 		}
 		

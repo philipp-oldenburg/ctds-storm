@@ -9,13 +9,13 @@ public interface SensorClientInterface {
 	 * @return temperature in °C
 	 * @throws IOException 
 	 */
-	double getTemperature();
+	double getTemperature() throws IOException;
 
 	/** Requests Pressure from server and waits for response.
 	 * @return pressure in Pa
 	 * @throws IOException 
 	 */
-	double getPressure();
+	double getPressure() throws IOException;
 
 	/** Requests altitude from server and waits for response.
 	 * @return altitude in m
@@ -33,7 +33,7 @@ public interface SensorClientInterface {
 	 * @return relative humidity
 	 * @throws IOException 
 	 */
-	double getHumidity();
+	double getHumidity() throws IOException;
 
 	/** Requests luminosity from server and waits for response.
 	 * @return luminosity in lux
@@ -44,8 +44,9 @@ public interface SensorClientInterface {
 	/**Returns wind speed. Placeholder until better solution is found.
 	 * 
 	 * @return Some arbitrary value.
+	 * @throws IOException 
 	 */
-	double getWindSpeed();
+	double getWindSpeed() throws IOException;
 	
 	/**Returns IP address of connected SensorServer.
 	 * 
