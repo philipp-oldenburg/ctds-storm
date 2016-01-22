@@ -25,7 +25,7 @@ public class ReceptionBolt implements IRichBolt {
 	private PrintWriter dout;
 	private BufferedReader din;
 	
-	private static final String SERVER_IP = "192.168.2.124";
+	private static final String SERVER_IP = "192.168.2.125";
 	private static final int SERVER_PORT = 9002;
 
 	@Override
@@ -68,21 +68,12 @@ public class ReceptionBolt implements IRichBolt {
 		if (socket == null) {
 			try {
 				socket = new Socket(SERVER_IP, SERVER_PORT);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			try {
 				dout = new PrintWriter(socket.getOutputStream());
 				din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			try {
 				socket.setSoTimeout(2000);
-			} catch (SocketException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException e1) {
+				System.err.println("REC: COULD NOT CONNECT TO SERVER ON IP " + SERVER_IP + " PORT " + SERVER_PORT);
+				e1.printStackTrace();
 			}
 		}
 		collector = arg2;
