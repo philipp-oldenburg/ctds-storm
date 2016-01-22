@@ -33,7 +33,7 @@ public class DataBaseSpout implements IRichSpout {
 	private PrintWriter dout;
 	private BufferedReader din;
 	
-	private static final String SERVER_IP = "192.168.2.125";
+	private static final String SERVER_IP = "192.168.2.124";
 	private static final int SERVER_PORT = 9001;
 	
 	private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
