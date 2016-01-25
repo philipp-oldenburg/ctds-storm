@@ -24,7 +24,7 @@
   <body>
 	<div class="container">
 		<div class="page-header">
-			<h1>Sensor Data Plots</h1>
+			<h1>Sensor Data Plot</h1>
 		</div><!-- page-header -->
 		<div class="row">
 			<div class="panel panel-default">
@@ -36,7 +36,10 @@
 					<div id="selectdiv"></div>
 					<div id="chart" style="width:80%;height:500px;"></div>
 					<div id="msgBar" class="well">
+						<h1>Current Sensor Data</h1>
 						<h3>Temp: <span class = "currTemp"></span>°C, Hum: <span class = "currHumi"></span>%, Press: <span class = "currPress"></span>Pa, Wind Speed: <span class = "currWind"></span>m/s <input class="refresh" type=button value="Refresh" onClick="getCurrentWeatherData()"></h3>
+						<h1>Classification</h1>
+						<h3>Label: <span class = "currLabel"></span>%</h3>
 					</div><!-- #msgBar.well -->
 				</div><!-- .panel-body -->
 			</div><!-- .panel panel-default -->
@@ -206,7 +209,6 @@
 						'<option value="7">SS_Windspeed</option>'+
 					'</select>';
 			$( "#selectdiv" ).append(selectsource);
-			//$(selectsource).insertBefore("#chart");
 		
 		
 		}
@@ -226,7 +228,6 @@
 						'<option value="12">December</option>'+
 					'</select>';
 			$( "#selectdiv" ).append(selectsource);
-			//$(selectsource).insertBefore("#chart");
 		}
 		function createYearSelectors() {
 			var selectsource = '<select class="selectYear form-inline form-control">'+
@@ -235,7 +236,6 @@
 						'<option value="2016" selected="selected">2016</option>'+
 					'</select>';
 			$( "#selectdiv" ).append(selectsource);
-			//$(selectsource).insertBefore("#chart");
 		}
 		function createDaySelectors(afterChange) {
 			var countdays = daysInMonth(parseInt($(".selectMonth").val()) + 1, $(".selectYear").val());
