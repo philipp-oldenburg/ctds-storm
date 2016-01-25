@@ -1,3 +1,12 @@
 .refresh {
     float: right;
 }
+
+.form-control {
+width:auto;
+display:inline-block;
+}
+
+select[class^=select] {
+	margin-right: 10px;
+}
