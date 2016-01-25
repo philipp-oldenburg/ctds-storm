@@ -3,7 +3,7 @@
 	if (!$fp) {
 		echo "$errstr ($errno)<br />\n";
 	} else {
-		$out = "NEWDATA\n";
+		$out = "NEWOWM\n";
 		//echo $out;
 		fwrite($fp, $out);
 		echo fgets($fp);
