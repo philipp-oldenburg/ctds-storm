@@ -1,4 +1,4 @@
-package newSensorClient;
+
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.Callable;
@@ -12,7 +12,7 @@ import org.json.JSONObject;
 
 import net.aksingh.owmjapis.CurrentWeather;
 
-public class SensorClient {
+public class SensorClientMkII {
 	
 	private Socket socket;
 	private PrintWriter dout;
@@ -28,17 +28,20 @@ public class SensorClient {
 	 * @throws IOException 
 	 * @throws UnknownHostException 
 	 */
-	public SensorClient(String serverIP, int port, Receiver receiver) throws UnknownHostException, IOException {
+	public SensorClientMkII(String serverIP, int port) throws UnknownHostException, IOException {
 		socket = new Socket(serverIP, port);
-		this.receiver = receiver;
 		try {
 			dout = new PrintWriter(socket.getOutputStream());
 			din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		new Listener(din, receiver).start();
 		sensorServerAddress = serverIP;
+	}
+	
+	public void init(Receiver rec) {
+		receiver = rec;
+		new Listener(din, receiver).start();
 	}
 	
 	public void requestTemperature() {
@@ -162,6 +165,7 @@ public class SensorClient {
 			} catch (NumberFormatException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
+				receiver.connectionReset();
 				e.printStackTrace();
 			} catch (JSONException e) {
 				e.printStackTrace();

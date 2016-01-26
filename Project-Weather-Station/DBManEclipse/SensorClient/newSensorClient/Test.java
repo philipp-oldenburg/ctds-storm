@@ -5,12 +5,15 @@ import java.net.UnknownHostException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import Receiver;
+import SensorClientMkII;
+
 public class Test implements Receiver {
 
 	public static void main(String[] args) {
-		SensorClient client = null;
+		SensorClientMkII client = null;
 		try {
-			client = new SensorClient("deffi.thecuslink.com", 1338, new Test());
+			client = new SensorClientMkII("deffi.thecuslink.com", 1338, new Test());
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

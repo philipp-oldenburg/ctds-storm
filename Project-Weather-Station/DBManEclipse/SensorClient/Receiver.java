@@ -1,4 +1,4 @@
-package newSensorClient;
+
 
 import org.json.JSONObject;
 
@@ -21,5 +21,7 @@ public interface Receiver {
 	void receivedAllData(JSONObject json);
 	
 	void receivedpong();
+	
+	void connectionReset();
 
 }

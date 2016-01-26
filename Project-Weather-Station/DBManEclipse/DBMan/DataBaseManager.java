@@ -89,38 +89,106 @@ public class DataBaseManager {
 
 		private static final long WEATHER_REQUEST_TIMEOUT = 2;
 		
-		private SensorClientInterface client;
+		private SensorClientMkII client;
+		private Receiver receiver;
 		boolean reconnectorRunning = false;
 		private Connection dbConnection;
 		private boolean sensorServerAvailable;
 		private boolean weathermapAccessible;
 		
+		private double curSensTemp;
+		private double curSensPres;
+		private double curSensHumi;
+		private double curSensWind;
+		private double curSensLumi;
+		private JSONObject curSensData;
+		
 		private String sensorServerAddress;
 
 		private OpenWeatherMap owmap;
 		
-		
-		
-//		private class SSCollector extends Thread {
-//			private String request;
-//			private SensorClient client;
-//			public SSCollector(String req) {
-//				request = req;
-//			}
-//		}
+
+		/**Constructor
+		 * 
+		 * @param cli SensorClient instance which the collector shall use to acquire data.
+		 * @param sensorServerAvailable  If true, data is collected from given SensorClient (where possible). Otherwise, all data
+		 * is taken from openweathermap.org.
+		 */
+		public DataCollector(SensorClientMkII cli, boolean sensorServerAvailable) {
+			this.client = cli;
+			this.sensorServerAvailable = sensorServerAvailable;
+			if (cli == null) {
+				sensorServerAddress = "deffi.thecuslink.com";
+			} else {
+				sensorServerAddress = cli.getSensorServerAddress();
+			}
+			receiver = new Receiver() {
+
+				@Override
+				public void receivedTemperature(double temperature) {
+					curSensTemp = temperature;
+				}
+
+				@Override
+				public void receivedPressure(double pressure) {
+					curSensPres = pressure;
+				}
+
+				@Override
+				public void receivedAltitude(double altitude) {}
+
+				@Override
+				public void receivedSealevelPressure(double sealevelpressure) {}
+
+				@Override
+				public void receivedHumidity(double humidity) {
+					curSensHumi = humidity;
+				}
+
+				@Override
+				public void receivedLight(double light) {
+					curSensLumi = light;
+				}
+
+				@Override
+				public void receivedWindSpeed(double windspeed) {
+					curSensWind = windspeed;
+				}
+
+				@Override
+				public void receivedAllData(JSONObject json) {
+					curSensData = json;
+				}
+
+				@Override
+				public void receivedpong() {}
+				
+				@Override
+				public void connectionReset() {
+					System.out.println("SensorClient unreachable.");
+					if (!reconnectorRunning) {
+						SCReconnector reconnector = new SCReconnector(this);
+						reconnector.start();
+					}
+				}
+				
+			};
+			client.init(receiver);
+		}
 		
 		private class SCReconnector extends Thread {
+			private Receiver rec;
 			
-//			private SCReconnector(DataCollector coll) {
-//				collector = coll;
-//			}
+			public SCReconnector(Receiver r) {
+				rec = r;
+			}
 			
 			public void run() {
 				reconnectorRunning = true;
 				System.out.println("Started reconnector");
 				while (true) {
 					try {
-						client = new SensorClient(sensorServerAddress);
+						client = new SensorClientMkII(sensorServerAddress, 1338);
 						System.out.println("created new SensorClient");
 //						sensorServerAvailable = true;
 						break;
@@ -167,6 +235,24 @@ public class DataBaseManager {
 			
 			
 			while(true) {
+				if (client != null) {
+					client.requestAllData();
+					//only request WS when machine running DBMan is connected to cslab network.
+//					try {
+//						client.requestWindSpeed();
+//					} catch (IOException e1) {
+//						System.out.println("Failed to request wind speed.");
+//						e1.printStackTrace();
+//					}
+				}
+				//Not sure if needed
+//				else {
+//					System.out.println("SensorClient unreachable.");
+//					if (!reconnectorRunning) {
+//						SCReconnector reconnector = new SCReconnector();
+//						reconnector.start();
+//					}
+//				}
 				System.out.println("---------------------------------------");
 				Date date = new Date();
 				System.out.println(date.toString());
@@ -189,19 +275,6 @@ public class DataBaseManager {
 					//e.printStackTrace();
 				}
 				sensorServerAvailable = true;
-//				try {
-//					client.ping();
-//					sensorServerAvailable = true;
-//					System.out.println("SensorServer is available");
-//				} catch (Exception e) {
-//					sensorServerAvailable = false;
-//					//e.printStackTrace();
-//					System.out.println("SensorClient unreachable. Trying to reconnect...");
-//					if (!reconnectorRunning) {
-//						SCReconnector reconnector = new SCReconnector();
-//						reconnector.start();
-//					}
-//				}
 				
 				System.out.println("Creating WeatherData object...");
 				
@@ -361,56 +434,44 @@ public class DataBaseManager {
 		 */
 		private void initWDwithSensorData(WeatherData data) {
 			
+			
 			try {
-				data.setTemp(client.getTemperature());
+				data.setTemp(curSensData.getDouble("temperature"));
+				System.out.println("set temp");
 			} catch (Exception e) {
 				data.setTemp(TEMPDEFAULTVALUE);
-				System.out.println("SensorClient unreachable.");
-				if (!reconnectorRunning) {
-					SCReconnector reconnector = new SCReconnector();
-					reconnector.start();
-				}
+				e.printStackTrace();
 			}
-			System.out.println("set temp");
 			
 			try {
-				data.setPressure(client.getPressure()/100);
+				data.setPressure(curSensData.getDouble("pressure"));
+				System.out.println("set pres");
 			} catch (Exception e) {
 				data.setPressure(PRESDEFAULTVALUE);
-				System.out.println("SensorClient unreachable.");
-				if (!reconnectorRunning) {
-					SCReconnector reconnector = new SCReconnector();
-					reconnector.start();
-				}
+				e.printStackTrace();
 			}
-			System.out.println("set pres");
+			
 			
 			try {
-				data.setHumidity(client.getHumidity());
+				data.setHumidity(curSensData.getDouble("humidity"));			
+				System.out.println("set hum");
 			} catch (Exception e) {
 				data.setHumidity(HUMDEFAULTVALUE);
-				System.out.println("SensorClient unreachable.");
-				if (!reconnectorRunning) {
-					SCReconnector reconnector = new SCReconnector();
-					reconnector.start();
-				}
+				e.printStackTrace();
 			}
-			System.out.println("set hum");
 			
-			try {
-				data.setSensorWindSpeed(client.getWindSpeed());
-			} catch (Exception e) {
-				data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
-				System.out.println("SensorClient unreachable.");
-				if (!reconnectorRunning) {
-					SCReconnector reconnector = new SCReconnector();
-					reconnector.start();
-				}
-			}
+//			data.setSensorWindSpeed(curSensWind);
+			data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
 			System.out.println("set ws");
 			
-			data.setLight(LIGHTDEFAULTVALUE);
-			System.out.println("set light");
+			
+			try {
+				data.setLight(curSensData.getDouble("luminosity"));
+				System.out.println("set light");
+			} catch (Exception e) {
+				data.setLight(LIGHTDEFAULTVALUE);
+				e.printStackTrace();
+			}
 		}
 		
 		
@@ -423,21 +484,6 @@ public class DataBaseManager {
 			return ((5.0/9.0) * (temperature - 32.0));
 		}
 		
-		/**Constructor
-		 * 
-		 * @param client SensorClient instance which the collector shall use to acquire data.
-		 * @param sensorServerAvailable  If true, data is collected from given SensorClient (where possible). Otherwise, all data
-		 * is taken from openweathermap.org.
-		 */
-		public DataCollector(SensorClientInterface client, boolean sensorServerAvailable) {
-			this.client = client;
-			this.sensorServerAvailable = sensorServerAvailable;
-			if (client == null) {
-				sensorServerAddress = "deffi.thecuslink.com";
-			} else {
-				sensorServerAddress = client.getSensorServerAddress();
-			}
-		}
 		
 		@Override
 		protected void finalize() throws Throwable {
@@ -452,7 +498,7 @@ public class DataBaseManager {
 	 * @param sensorServerAvailable  If true, the collector gets its data from the given SensorClient (where possible). Otherwise, all data
 	 * is taken from openweathermap.org.
 	 */
-	public DataBaseManager(SensorClientInterface client, boolean sensorServerAvailable) {
+	public DataBaseManager(SensorClientMkII client, boolean sensorServerAvailable) {
 		collector = new DataCollector(client, sensorServerAvailable);
 		collector.start();
 		

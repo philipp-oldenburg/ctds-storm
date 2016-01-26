@@ -3,8 +3,13 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import org.json.JSONObject;
+
+import com.sun.corba.se.spi.orb.DataCollector;
+
 public class Main {
 	
+	private static final int MK_II_PORT = 1338;
 	private static boolean startImmediately;
 
 	/**Checks if given input String is of the type "a.b.c.d" where 0 <= a, b, c, d <= 255.
@@ -32,8 +37,8 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-
-		SensorClientInterface client = null;
+		
+		SensorClientMkII client = null;
 		String ipAddress = null;
 		boolean requireSensorServerAvailable = false;
 		if (args.length == 3) {
@@ -47,33 +52,14 @@ public class Main {
 		boolean sensorServerAvailable = true;
 		
 		if (!startImmediately) {
-//			if (checkIfStringIsIPAddress(ipAddress)) {
-				try {
-					System.out.println("Looking for sensor server.");
-					client = new SensorClient(ipAddress);
-				} catch (UnknownHostException e) {
-					if (requireSensorServerAvailable) {
-						System.out.println("Could not find host:");
-						e.printStackTrace();
-						client = standByForIP(client);
-					} else {
-						System.out.println("Could not find host.");
-						sensorServerAvailable = false;
-					}
-				} catch (IOException e) {
-					if (requireSensorServerAvailable) {
-						System.out.println("Unable to connect to SensorServer:");
-						e.printStackTrace();
-						client = standByForIP(client);
-					} else {
-						System.out.println("Unable to connect to SensorServer.");
-						sensorServerAvailable = false;
-					}
-				}
-//			} else {
-//				System.out.println("Given Parameter is not a valid IP address.");
-//				client = standByForIP(client);
-//			} 
+			try {
+				System.out.println("Looking for sensor server.");
+				client = new SensorClientMkII(ipAddress, 1338);
+			} catch (Exception e) {
+				System.out.println("Could not find host.");
+				e.printStackTrace();
+				sensorServerAvailable = false;
+			}
 		} else {
 			sensorServerAvailable = false;
 		}
