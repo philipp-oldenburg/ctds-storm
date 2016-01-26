@@ -16,19 +16,24 @@ public class Test {
 			e.printStackTrace();
 		}
 		if (client != null) {
-			System.out.println("TEMP");
-			System.out.println(client.getTemperature());
-			System.out.println("HUMI");
-			System.out.println(client.getHumidity());
-			System.out.println("ALTI");
-			System.out.println(client.getAltitude());
-			System.out.println("PRES");
-			System.out.println(client.getPressure());
-			System.out.println("SEAL");
-			System.out.println(client.getSealevelPressure());
-			System.out.println("LUMI");
-			System.out.println(client.getLight());
-			System.out.println(client.getWindSpeed());
+			try {
+				System.out.println("TEMP");
+				System.out.println(client.getTemperature());
+				System.out.println("HUMI");
+				System.out.println(client.getHumidity());
+				System.out.println("ALTI");
+				System.out.println(client.getAltitude());
+				System.out.println("PRES");
+				System.out.println(client.getPressure());
+				System.out.println("SEAL");
+				System.out.println(client.getSealevelPressure());
+				System.out.println("LUMI");
+				System.out.println(client.getLight());
+				System.out.println(client.getWindSpeed());
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
 			JSONObject obj = client.getAllData();
 			
 			try {
