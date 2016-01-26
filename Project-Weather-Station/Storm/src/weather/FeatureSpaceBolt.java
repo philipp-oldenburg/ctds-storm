@@ -33,10 +33,12 @@ public class FeatureSpaceBolt implements IRichBolt {
 		double deltapressure = pressure - raw.getDoubleByField("opres");
 		double deltahumidity = humidity - raw.getDoubleByField("ohumi");
 		double deltawindspeed = windspeed - raw.getDoubleByField("owind");
+		String source = raw.getStringByField("sourc");
 		return new Values(
 				time,
 				temperature, pressure, humidity, windspeed,
-				deltatemperature, deltapressure, deltahumidity, deltawindspeed);
+				deltatemperature, deltapressure, deltahumidity, deltawindspeed,
+				source);
 	}
 
 	@Override
@@ -46,7 +48,7 @@ public class FeatureSpaceBolt implements IRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
-		arg0.declare(new Fields("ctime", "ctemp", "cpres", "chumi", "cwind", "dtemp", "dpres", "dhumi", "dwind"));
+		arg0.declare(new Fields("ctime", "ctemp", "cpres", "chumi", "cwind", "dtemp", "dpres", "dhumi", "dwind", "sourc"));
 	}
 
 	@Override

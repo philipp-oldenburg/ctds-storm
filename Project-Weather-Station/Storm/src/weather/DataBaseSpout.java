@@ -53,11 +53,16 @@ public class DataBaseSpout implements IRichSpout {
 	@Override
 	public void fail(Object arg0) {}
 
+	/**
+	 * gets from server and passes on first sensor then owm data
+	 */
 	@Override
 	public void nextTuple() {
 		if (lastEmission == 0 || lastEmission + EMISSION_PERIOD <= System.currentTimeMillis()) {
 			
-			Values result = fetchReading();
+			Values result = fetchReading(false);
+			if (result != null) collector.emit(result);
+			result = fetchReading(true);
 			if (result != null) collector.emit(result);
 			
             lastEmission = System.currentTimeMillis();
@@ -71,11 +76,11 @@ public class DataBaseSpout implements IRichSpout {
 //		6.122222476535374, 995.0, 75.0, 3.240000009536743,
 //		5.822221967909072, 996.0, 81.0, 4.539999961853027);
 
-	private Values fetchReading() {
+	private Values fetchReading(boolean owm) {
 		String reading = null;
 		try {
-			reading = requestAndWaitForResponse("NEWOWM");
-			System.out.println(reading);
+			reading = requestAndWaitForResponse(owm ? "NEWOWM" : "NEWSENS");
+			System.out.println("Response to '" + (owm ? "NEWOWM" : "NEWSENS") + "': " + reading);
 			JSONObject wrapperjson = new JSONObject(reading);
 			if (wrapperjson != null && wrapperjson.has("0")) {
 				JSONObject json = (JSONObject) wrapperjson.get("0");
@@ -88,22 +93,23 @@ public class DataBaseSpout implements IRichSpout {
 						time = System.currentTimeMillis();
 					}
 					String newTimeStamp = TIMESTAMP_FORMAT.format(new Date(time - 3600000));
-					reading = requestAndWaitForResponse(newTimeStamp + ";OWM");
-					System.out.println(reading);
+					reading = requestAndWaitForResponse(newTimeStamp + ";" + (owm ? "OWM" : "SENS"));
+					System.out.println("Response to '" + newTimeStamp + ";" + (owm ? "OWM" : "SENS") + "': " + reading);
 					wrapperjson = new JSONObject(reading);
 					if (wrapperjson != null && wrapperjson.has("0")) {
 						JSONObject jsonOld = (JSONObject) wrapperjson.get("0");
 						if (jsonOld != null) {
 							return new Values(
 									json.getString("timestamp"),
-									json.getDouble("owmtemperature"),
-									json.getDouble("owmpressure"),
-									json.getDouble("owmhumidity"),
-									json.getDouble("owmwindspeed"),
+									json.getDouble(owm ? "owmtemperature" : "temperature"),
+									json.getDouble(owm ? "owmpressure" : "pressure"),
+									json.getDouble(owm ? "owmhumidity" : "humidity"),
+									json.getDouble(owm ? "owmwindspeed" : "sensorwindspeed"),
 									jsonOld.getDouble("temperature"),
 									jsonOld.getDouble("pressure"),
 									jsonOld.getDouble("humidity"),
-									jsonOld.getDouble("windspeed"));
+									jsonOld.getDouble("windspeed"),
+									owm ? "OWM" : "SENS");
 						}
 					}
 				}
@@ -147,7 +153,7 @@ public class DataBaseSpout implements IRichSpout {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
-		arg0.declare(new Fields("ctime", "ctemp", "cpres", "chumi", "cwind", "otemp", "opres", "ohumi", "owind"));
+		arg0.declare(new Fields("ctime", "ctemp", "cpres", "chumi", "cwind", "otemp", "opres", "ohumi", "owind", "sourc"));
 	}
 
 	@Override

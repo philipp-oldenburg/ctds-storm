@@ -28,7 +28,7 @@ public class Starter {
 //		cluster.shutdown();
 		
 		try {
-			StormSubmitter.submitTopology("helloworldtopology", conf, builder.createTopology());
+			StormSubmitter.submitTopology("weatherclasstopology", conf, builder.createTopology());
 		} catch (AlreadyAliveException | InvalidTopologyException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
