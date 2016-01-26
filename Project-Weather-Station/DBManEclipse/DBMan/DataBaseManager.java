@@ -99,6 +99,16 @@ public class DataBaseManager {
 
 		private OpenWeatherMap owmap;
 		
+		
+		
+//		private class SSCollector extends Thread {
+//			private String request;
+//			private SensorClient client;
+//			public SSCollector(String req) {
+//				request = req;
+//			}
+//		}
+		
 		private class SCReconnector extends Thread {
 			
 //			private SCReconnector(DataCollector coll) {
@@ -491,8 +501,15 @@ public class DataBaseManager {
 						JSONObject temp = null;
 						try {
 							temp = new JSONObject(input);
+							if(temp.get("source").equals("OWM")) {
+								provider.setCurrentClassifiedWeatherOWM(temp);
+							} else if (temp.get("source").equals("SENS")) {
+								provider.setCurrentClassifiedWeatherSENS(temp);
+							} else {
+								provider.setCurrentClassifiedWeatherSENS(temp);
+								provider.setCurrentClassifiedWeatherOWM(temp);
+							}
 						} catch (Exception e) {
-							provider.setCurrentClassifiedWeather(temp);
 							e.printStackTrace();
 						}
 //						if (temp != null) {
@@ -527,10 +544,15 @@ public class DataBaseManager {
 	private class DataProvider extends Thread {
 		
 		private static final int PORT = 9001;
-		private JSONObject currentClassifiedWeather;
+		private JSONObject currentOWMClass;
+		private JSONObject currentSENSClass;
 		
-		public void setCurrentClassifiedWeather(JSONObject obj) {
-			currentClassifiedWeather = obj;
+		public void setCurrentClassifiedWeatherOWM(JSONObject obj) {
+			currentOWMClass = obj;
+		}
+
+		public void setCurrentClassifiedWeatherSENS(JSONObject obj) {
+			currentSENSClass = obj;
 		}
 		
 		/**Waits for connection on port 9001 and accepts connection in new thread, providing the following methods for acquisition of data:<br>
@@ -584,6 +606,12 @@ public class DataBaseManager {
 								System.out.println("Processing WebServer request...");
 								if (input.equals("NEWOWM") || input.equals("NEWSENS")) {
 									sendLatestDataVector(out, input);
+								} else if (input.equals("CLASSDATA")) {
+									out.write(currentOWMClass.toString());
+									out.flush();
+								} else if (input.equals("CLASSSENS")) {
+									out.write(currentSENSClass.toString());
+									out.flush();
 								} else {
 									String[] inputParts = input.split(";");
 									if (inputParts.length == 1) {
