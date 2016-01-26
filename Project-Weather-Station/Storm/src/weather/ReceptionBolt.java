@@ -1,9 +1,11 @@
 package weather;
-import java.io.BufferedReader;
+//import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+//import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import org.json.JSONException;
@@ -22,27 +24,56 @@ public class ReceptionBolt implements IRichBolt {
 	
 	private Socket socket = null;
 	private PrintWriter dout;
-	private BufferedReader din;
+//	private BufferedReader din;
 	
 	private static final String SERVER_IP = "192.168.2.124";
 	private static final int SERVER_PORT = 9002;
+	
+	private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	private static long newestOWM = 0;
+	private static long newestSENS = 0;
 
 	@Override
 	public void cleanup() {}
 
+	/**
+	 * Sends new classified data if it is newer than last sent classified data.
+	 */
 	@Override
 	public void execute(Tuple resultVector) {
-		sendToServer(
-				resultVector.getStringByField("ctime"),
-				resultVector.getDoubleByField("ctemp"),
-				resultVector.getDoubleByField("cpres"),
-				resultVector.getDoubleByField("chumi"),
-				resultVector.getDoubleByField("cwind"),
-				resultVector.getStringByField("label"));
+		
+		boolean sendClearance = false;
+		String source = resultVector.getStringByField("sourc");
+		try {
+			long time = TIMESTAMP_FORMAT.parse(resultVector.getStringByField("ctime")).getTime();
+			if (source.equals("OWM") && time > newestOWM) {
+				newestOWM = time;
+				sendClearance = true;
+			} else if (source.equals("SENS") && time > newestSENS) {
+				newestSENS = time;
+				sendClearance = true;
+			}
+		} catch (ParseException e) {
+			System.err.println("Did not send labeled data as timestamp was bad");
+			//just don't send.
+		}
+		
+		if (sendClearance) {
+			sendToServer(
+					resultVector.getStringByField("ctime"),
+					resultVector.getDoubleByField("ctemp"),
+					resultVector.getDoubleByField("cpres"),
+					resultVector.getDoubleByField("chumi"),
+					resultVector.getDoubleByField("cwind"),
+					resultVector.getStringByField("label"),
+					resultVector.getStringByField("sourc"));
+		}
+		
 		collector.ack(resultVector);
 	}
 	
-	private void sendToServer(String time, Double temp, Double pres, Double humi, Double wind, String label) {
+	private void sendToServer(String time, Double temp, Double pres, Double humi, Double wind, String label, String source) {
 		JSONObject currentObject = new JSONObject();
 		try {
 			currentObject.put("timestamp", time);
@@ -51,9 +82,11 @@ public class ReceptionBolt implements IRichBolt {
 			currentObject.put("humidity", humi);
 			currentObject.put("sensorwindspeed", wind);
 			currentObject.put("label", label);
+			currentObject.put("source", source);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
+		System.out.println("Sent to server: " + currentObject.toString());
 		dout.println(currentObject.toString());
 		dout.flush();
 		
@@ -66,7 +99,7 @@ public class ReceptionBolt implements IRichBolt {
 			try {
 				socket = new Socket(SERVER_IP, SERVER_PORT);
 				dout = new PrintWriter(socket.getOutputStream());
-				din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//				din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				socket.setSoTimeout(2000);
 			} catch (IOException e1) {
 				System.err.println("REC: COULD NOT CONNECT TO SERVER ON IP " + SERVER_IP + " PORT " + SERVER_PORT);

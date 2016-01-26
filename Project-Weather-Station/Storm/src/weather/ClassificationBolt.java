@@ -33,6 +33,7 @@ public class ClassificationBolt implements IRichBolt {
 
 	private Values classify(Tuple featureVector) {
 		String time = featureVector.getStringByField("ctime");
+		String source = featureVector.getStringByField("sourc");
 		double[] x = new double[8];
 		
 		x[0] = featureVector.getDoubleByField("ctemp");
@@ -49,7 +50,7 @@ public class ClassificationBolt implements IRichBolt {
 		return new Values(
 				time,
 				x[0], x[1], x[2], x[3],
-				label);
+				label, source);
 	}
 
 	@Override
@@ -62,7 +63,7 @@ public class ClassificationBolt implements IRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
-		arg0.declare(new Fields("ctime", "ctemp", "cpres", "chumi", "cwind", "label"));
+		arg0.declare(new Fields("ctime", "ctemp", "cpres", "chumi", "cwind", "label", "sourc"));
 	}
 
 	@Override
