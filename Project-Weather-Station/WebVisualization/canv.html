@@ -118,7 +118,6 @@
 		}
 		
 		function day1Changed() {
-			console.log("day1 changed");
 			var countdays = daysInMonth(parseInt($(".selectMonth").val()) + 1, $(".selectYear").val());
 			var selectsource = '<select class="selectDay2 form-inline form-control">';
 			for (var i = parseInt($(".selectDay1").val()); i <= countdays; i++) {
@@ -127,7 +126,6 @@
 			selectsource += '</select>';
 			$(".selectDay2").replaceWith(selectsource);
 			$( ".selectDay2" ).change(function() {
-				console.log("test");
 				updateGraph();
 			});
 			updateGraph();
@@ -176,6 +174,8 @@
 				tuples.sort(function(a, b) {
 					return new Date(a[0].replace(" ", "T")) - new Date(b[0].replace(" ", "T"));
 				});
+				
+				
 				for (var i = 0; i < tuples.length; i++) {
 					var day = Number(tuples[i][0].substring(8, 10));
 					var hour = Number(tuples[i][0].substring(11, 13));
@@ -188,10 +188,28 @@
 					else if ($(".selectType").val() == 6) {
 						if ((tuples[i][1] > 10)) array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
 					}
+					else if ($(".selectType").val() == 2) {
+						array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
+					}
 					else {
 						array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
 					}
 				}
+				
+				var maximum = -20000;
+				var minimum = 20000;
+				for (var i = 0; i < array.length; i++) {
+					if(Number(array[i].y) > maximum) maximum = Number(array[i].y);
+					if(Number(array[i].y) < minimum) minimum = Number(array[i].y);
+				}
+				var offset = (maximum - minimum) * 0.1;
+				maximum = Math.ceil(maximum) + offset;
+				minimum = Math.floor(minimum) - offset;
+				console.log("max:" + maximum);
+				console.log("min:" + minimum);
+				options.axisY.minimum = minimum;
+				options.axisY.maximum = maximum;
+				
 				options.data[0].dataPoints = array;
 				graph.render();
 			});
@@ -259,7 +277,6 @@
 			else {
 				$(".selectDay2").replaceWith(selectsource);
 				$( ".selectDay2" ).change(function() {
-					console.log("test");
 					updateGraph();
 				});
 			}
@@ -286,7 +303,6 @@
 			$( ".selectDay1" ).change(day1Changed);
 			
 			$( ".selectDay2" ).change(function() {
-				console.log("test");
 				updateGraph();
 			});
 			
