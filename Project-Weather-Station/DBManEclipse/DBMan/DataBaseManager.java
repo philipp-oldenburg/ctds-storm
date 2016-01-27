@@ -566,6 +566,10 @@ public class DataBaseManager {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
+						System.out.println("++++++++++++++++++++++++++++++++++++++++");
+						if (temp != null) System.out.println(temp.toString());
+						else System.out.println("JSONObject was null.");
+						System.out.println("++++++++++++++++++++++++++++++++++++++++");
 //						if (temp != null) {
 //							System.out.println(temp.toString());
 //						} else System.out.println("JSONObject from ResultBolt is null.");
