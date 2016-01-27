@@ -36,10 +36,14 @@
 					<div id="selectdiv"></div>
 					<div id="chart" style="width:80%;height:500px;"></div>
 					<div id="msgBar" class="well">
-						<h1>Current Sensor Data</h1>
-						<h3>Temp: <span class = "currTemp"></span>°C, Hum: <span class = "currHumi"></span>%, Press: <span class = "currPress"></span>Pa, Wind Speed: <span class = "currWind"></span>m/s <input class="refresh" type=button value="Refresh" onClick="getCurrentWeatherData()"></h3>
+						<h1>Current OWM Data</h1>
+						<h3>Timestamp: <span class = "currTime"></span>, Temp: <span class = "currTemp"></span>°C, Hum: <span class = "currHumi"></span>%, Press: <span class = "currPress"></span>Pa, Wind Speed: <span class = "currWind"></span>m/s <input class="refresh" type=button value="Refresh" onClick="getCurrentWeatherData()"></h3>
 						<h1>Classification</h1>
-						<h3>Label: <span class = "currLabel"></span>%</h3>
+						<h3>Label: <span class = "currLabel"></span></h3>
+						<h1>Current Sensor Data</h1>
+						<h3>Timestamp: <span class = "currSSTime"></span>, Temp: <span class = "currSSTemp"></span>°C, Hum: <span class = "currSSHumi"></span>%, Press: <span class = "currSSPress"></span>Pa, Wind Speed: <span class = "currSSWind"></span>m/s <input class="refresh" type=button value="Refresh" onClick="getCurrentWeatherData()"></h3>
+						<h1>Classification</h1>
+						<h3>Label: <span class = "currSSLabel"></span></h3>
 					</div><!-- #msgBar.well -->
 				</div><!-- .panel-body -->
 			</div><!-- .panel panel-default -->
@@ -108,11 +112,21 @@
 			});
 			request.done(function (response, textStatus, jqXHR){
 				// Log a message to the console
-				currWeather = JSON.parse(response);
-				$(".currTemp").html(parseFloat(currWeather[0].owmtemperature).toFixed(2));
-				$(".currHumi").html(parseFloat(currWeather[0].owmhumidity).toFixed(2));
-				$(".currPress").html(parseFloat(currWeather[0].owmpressure).toFixed(2));
-				$(".currWind").html(parseFloat(currWeather[0].owmwindspeed).toFixed(2));
+				console.log("CLASSOWM response:" + response);
+				currWeather = JSON.parse(response.split(";")[0]);
+				$(".currTemp").html(parseFloat(currWeather.temperature).toFixed(2));
+				$(".currHumi").html(parseFloat(currWeather.humidity).toFixed(2));
+				$(".currPress").html(parseFloat(currWeather.pressure).toFixed(2));
+				$(".currWind").html(parseFloat(currWeather.windspeed).toFixed(2));
+				$(".currLabel").html(currWeather.label);
+				$(".currTime").html(currWeather.timestamp);
+				currWeather = JSON.parse(response.split(";")[1]);
+				$(".currSSTemp").html(parseFloat(currWeather.temperature).toFixed(2));
+				$(".currSSHumi").html(parseFloat(currWeather.humidity).toFixed(2));
+				$(".currSSPress").html(parseFloat(currWeather.pressure).toFixed(2));
+				$(".currSSWind").html(parseFloat(currWeather.windspeed).toFixed(2));
+				$(".currSSLabel").html(currWeather.label);
+				$(".currSSTime").html(currWeather.timestamp);
 			});
 			
 		}
@@ -190,6 +204,9 @@
 					}
 					else if ($(".selectType").val() == 2) {
 						array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
+					}
+					else if ($(".selectType").val() == 0) {
+						if ((tuples[i][1] < 50)) array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
 					}
 					else {
 						array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
