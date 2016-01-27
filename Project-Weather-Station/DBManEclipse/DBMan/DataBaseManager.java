@@ -571,7 +571,7 @@ public class DataBaseManager {
 //						} else System.out.println("JSONObject from ResultBolt is null.");
 					}
 				} catch (IOException e) {
-					e.printStackTrace();
+					System.out.println("ResultBolt connection has been closed.");
 				}
 			}
 			
@@ -658,6 +658,7 @@ public class DataBaseManager {
 							String input, output;
 							while((input = in.readLine()) != null) {
 								System.out.println("Processing WebServer request...");
+								System.out.println(input);
 								if (input.equals("NEWOWM") || input.equals("NEWSENS")) {
 									sendLatestDataVector(out, input);
 								} else if (input.equals("CLASSOWM")) {
