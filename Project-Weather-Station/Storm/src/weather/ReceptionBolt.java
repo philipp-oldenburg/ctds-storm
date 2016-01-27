@@ -43,31 +43,35 @@ public class ReceptionBolt implements IRichBolt {
 	@Override
 	public void execute(Tuple resultVector) {
 		
-		boolean sendClearance = false;
-		String source = resultVector.getStringByField("sourc");
-		try {
-			long time = TIMESTAMP_FORMAT.parse(resultVector.getStringByField("ctime")).getTime();
-			if (source.equals("OWM") && time > newestOWM) {
-				newestOWM = time;
-				sendClearance = true;
-			} else if (source.equals("SENS") && time > newestSENS) {
-				newestSENS = time;
-				sendClearance = true;
+		if (socket != null) {
+			boolean sendClearance = false;
+			String source = resultVector.getStringByField("sourc");
+			try {
+				long time = TIMESTAMP_FORMAT.parse(resultVector.getStringByField("ctime")).getTime();
+				if (source.equals("OWM") && time > newestOWM) {
+					newestOWM = time;
+					sendClearance = true;
+				} else if (source.equals("SENS") && time > newestSENS) {
+					newestSENS = time;
+					sendClearance = true;
+				}
+			} catch (ParseException e) {
+				System.err.println("Did not send labeled data as timestamp was bad");
+				//just don't send.
 			}
-		} catch (ParseException e) {
-			System.err.println("Did not send labeled data as timestamp was bad");
-			//just don't send.
-		}
-		
-		if (sendClearance) {
-			sendToServer(
-					resultVector.getStringByField("ctime"),
-					resultVector.getDoubleByField("ctemp"),
-					resultVector.getDoubleByField("cpres"),
-					resultVector.getDoubleByField("chumi"),
-					resultVector.getDoubleByField("cwind"),
-					resultVector.getStringByField("label"),
-					resultVector.getStringByField("sourc"));
+			
+			if (sendClearance) {
+				sendToServer(
+						resultVector.getStringByField("ctime"),
+						resultVector.getDoubleByField("ctemp"),
+						resultVector.getDoubleByField("cpres"),
+						resultVector.getDoubleByField("chumi"),
+						resultVector.getDoubleByField("cwind"),
+						resultVector.getStringByField("label"),
+						resultVector.getStringByField("sourc"));
+			}
+		} else {
+			System.err.println("Did not send labeled data because server could not be reached.");
 		}
 		
 		collector.ack(resultVector);
@@ -80,7 +84,7 @@ public class ReceptionBolt implements IRichBolt {
 			currentObject.put("temperature", temp);
 			currentObject.put("pressure", pres);
 			currentObject.put("humidity", humi);
-			currentObject.put("sensorwindspeed", wind);
+			currentObject.put("windspeed", wind);
 			currentObject.put("label", label);
 			currentObject.put("source", source);
 		} catch (JSONException e) {
@@ -102,8 +106,8 @@ public class ReceptionBolt implements IRichBolt {
 //				din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				socket.setSoTimeout(2000);
 			} catch (IOException e1) {
+				socket = null;
 				System.err.println("REC: COULD NOT CONNECT TO SERVER ON IP " + SERVER_IP + " PORT " + SERVER_PORT);
-				e1.printStackTrace();
 			}
 		}
 		collector = arg2;
