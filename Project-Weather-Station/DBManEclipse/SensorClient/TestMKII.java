@@ -1,19 +1,16 @@
-package newSensorClient;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import Receiver;
-import SensorClientMkII;
 
-public class Test implements Receiver {
+public class TestMKII implements Receiver {
 
 	public static void main(String[] args) {
 		SensorClientMkII client = null;
 		try {
-			client = new SensorClientMkII("deffi.thecuslink.com", 1338, new Test());
+			client = new SensorClientMkII("deffi.thecuslink.com", 1338);
+			client.init(new TestMKII());
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -67,6 +64,11 @@ public class Test implements Receiver {
 	@Override
 	public void receivedpong() {
 		System.out.println("rcvd pong");
+	}
+
+	@Override
+	public void connectionReset() {
+		System.out.println("connection resetted");
 	}
 
 }
