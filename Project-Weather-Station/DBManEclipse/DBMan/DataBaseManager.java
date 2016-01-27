@@ -660,11 +660,19 @@ public class DataBaseManager {
 								System.out.println("Processing WebServer request...");
 								if (input.equals("NEWOWM") || input.equals("NEWSENS")) {
 									sendLatestDataVector(out, input);
-								} else if (input.equals("CLASSDATA")) {
-									out.write(currentOWMClass.toString());
+								} else if (input.equals("CLASSOWM")) {
+									if (currentOWMClass != null) {
+										out.write(currentOWMClass.toString());
+									} else {
+										out.write(new JSONObject().toString());
+									}
 									out.flush();
 								} else if (input.equals("CLASSSENS")) {
-									out.write(currentSENSClass.toString());
+									if (currentSENSClass != null) {
+										out.write(currentSENSClass.toString());
+									} else {
+										out.write(new JSONObject().toString());
+									}
 									out.flush();
 								} else {
 									String[] inputParts = input.split(";");
