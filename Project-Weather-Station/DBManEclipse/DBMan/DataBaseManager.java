@@ -665,10 +665,10 @@ public class DataBaseManager {
 									System.out.println("received CLASSOWM");
 									System.out.println(currentOWMClass == null);
 									if (currentOWMClass != null) {
-										out.write(currentOWMClass.toString());
+										out.write(currentOWMClass.toString() + System.getProperty("line.separator"));
 										System.out.println("returning currentOWMClass");
 									} else {
-										out.write(new JSONObject().toString());
+										out.write(new JSONObject().toString() + System.getProperty("line.separator"));
 										System.out.println("returning empty OWMClass");
 									}
 									out.flush();
@@ -676,10 +676,10 @@ public class DataBaseManager {
 									System.out.println("received CLASSSENS");
 									System.out.println(currentSENSClass == null);
 									if (currentSENSClass != null) {
-										out.write(currentSENSClass.toString());
+										out.write(currentSENSClass.toString() + System.getProperty("line.separator"));
 										System.out.println("returning currentSENSClass");
 									} else {
-										out.write(new JSONObject().toString());
+										out.write(new JSONObject().toString() + System.getProperty("line.separator"));
 										System.out.println("returning empty SENSClass");
 									}
 									out.flush();
