@@ -91,6 +91,7 @@ public class SensorClientMkII {
 				} 
 				catch (IOException e) {
 					System.out.println("Wind sensor unavailable.");
+					e.printStackTrace();
 				}
 				receiver.receivedWindSpeed(-1);
 			}

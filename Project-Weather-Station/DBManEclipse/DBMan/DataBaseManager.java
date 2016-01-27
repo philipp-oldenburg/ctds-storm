@@ -662,17 +662,25 @@ public class DataBaseManager {
 								if (input.equals("NEWOWM") || input.equals("NEWSENS")) {
 									sendLatestDataVector(out, input);
 								} else if (input.equals("CLASSOWM")) {
+									System.out.println("received CLASSOWM");
+									System.out.println(currentOWMClass == null);
 									if (currentOWMClass != null) {
 										out.write(currentOWMClass.toString());
+										System.out.println("returning currentOWMClass");
 									} else {
 										out.write(new JSONObject().toString());
+										System.out.println("returning empty OWMClass");
 									}
 									out.flush();
 								} else if (input.equals("CLASSSENS")) {
+									System.out.println("received CLASSSENS");
+									System.out.println(currentSENSClass == null);
 									if (currentSENSClass != null) {
 										out.write(currentSENSClass.toString());
+										System.out.println("returning currentSENSClass");
 									} else {
 										out.write(new JSONObject().toString());
+										System.out.println("returning empty SENSClass");
 									}
 									out.flush();
 								} else {
