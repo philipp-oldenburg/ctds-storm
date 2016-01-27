@@ -190,6 +190,7 @@ public class DataBaseManager {
 					try {
 						client = new SensorClientMkII(sensorServerAddress, 1338);
 						System.out.println("created new SensorClient");
+						client.init(rec);
 //						sensorServerAvailable = true;
 						break;
 					} catch(Exception e) {
@@ -237,13 +238,12 @@ public class DataBaseManager {
 			while(true) {
 				if (client != null) {
 					client.requestAllData();
-					//only request WS when machine running DBMan is connected to cslab network.
-//					try {
-//						client.requestWindSpeed();
-//					} catch (IOException e1) {
-//						System.out.println("Failed to request wind speed.");
-//						e1.printStackTrace();
-//					}
+					try {
+						client.requestWindSpeed();
+					} catch (Exception e1) {
+						System.out.println("Failed to request wind speed.");
+						e1.printStackTrace();
+					}
 				}
 				//Not sure if needed
 //				else {
@@ -440,7 +440,6 @@ public class DataBaseManager {
 				System.out.println("set temp");
 			} catch (Exception e) {
 				data.setTemp(TEMPDEFAULTVALUE);
-				e.printStackTrace();
 			}
 			
 			try {
@@ -448,7 +447,6 @@ public class DataBaseManager {
 				System.out.println("set pres");
 			} catch (Exception e) {
 				data.setPressure(PRESDEFAULTVALUE);
-				e.printStackTrace();
 			}
 			
 			
@@ -457,11 +455,14 @@ public class DataBaseManager {
 				System.out.println("set hum");
 			} catch (Exception e) {
 				data.setHumidity(HUMDEFAULTVALUE);
-				e.printStackTrace();
 			}
 			
-//			data.setSensorWindSpeed(curSensWind);
-			data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
+			try {
+				data.setSensorWindSpeed(curSensWind);
+			} catch (Exception e1) {
+				data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
+			}
+//			data.setSensorWindSpeed(WSPEEDDEFAULTVALUE);
 			System.out.println("set ws");
 			
 			
@@ -470,7 +471,6 @@ public class DataBaseManager {
 				System.out.println("set light");
 			} catch (Exception e) {
 				data.setLight(LIGHTDEFAULTVALUE);
-				e.printStackTrace();
 			}
 		}
 		

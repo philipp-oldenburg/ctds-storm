@@ -1,12 +1,3 @@
-import java.io.IOException;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.Scanner;
-
-import org.json.JSONObject;
-
-import com.sun.corba.se.spi.orb.DataCollector;
-
 public class Main {
 	
 	private static final int MK_II_PORT = 1338;
@@ -65,35 +56,5 @@ public class Main {
 		}
 		DataBaseManager dbMan = new DataBaseManager(client, sensorServerAvailable);
 		System.out.println("created DBMan");
-	}
-
-	private static SensorClientInterface standByForIP(SensorClientInterface client) {
-		Scanner sysInScanner = new Scanner(System.in);
-		String consoleInput;
-		while (true) {
-			System.out.println("Please input SensorServer IP address:");
-			consoleInput = sysInScanner.nextLine();
-			if (!checkIfStringIsIPAddress(consoleInput)) {
-				System.out.println("Given input is not a valid IP address. Should look as follows:\n 'a.b.c.d' where 0 <= a, b, c, d <= 255");
-				continue;
-			}
-			
-			try {
-				client = new SensorClient(consoleInput);
-			} catch (UnknownHostException e){
-				System.out.println("Could not find host:");
-				e.printStackTrace();
-				System.out.println("Please verify IP address and availability of the SensorServer.");
-				continue;
-			} catch (IOException e) {
-				System.out.println("Detected IO exception:");
-				e.printStackTrace();
-				System.out.println("Please verify IP address and availability of the SensorServer.");
-				continue;
-			}
-			break;
-		}
-		sysInScanner.close();
-		return client;
 	}
 }
