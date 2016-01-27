@@ -59,13 +59,14 @@ public class DataBaseSpout implements IRichSpout {
 	@Override
 	public void nextTuple() {
 		if (lastEmission == 0 || lastEmission + EMISSION_PERIOD <= System.currentTimeMillis()) {
+			if (socket != null) {
+				Values result = fetchReading(false);
+				if (result != null) collector.emit(result);
+				result = fetchReading(true);
+				if (result != null) collector.emit(result);
+			}
 			
-			Values result = fetchReading(false);
-			if (result != null) collector.emit(result);
-			result = fetchReading(true);
-			if (result != null) collector.emit(result);
-			
-            lastEmission = System.currentTimeMillis();
+			lastEmission = System.currentTimeMillis();
             return;
 	    }
 	    Utils.sleep(50);
@@ -139,14 +140,16 @@ public class DataBaseSpout implements IRichSpout {
 
 	@Override
 	public void open(Map arg0, TopologyContext arg1, SpoutOutputCollector arg2) {
-		try {
-			socket = new Socket(SERVER_IP, SERVER_PORT);
-			dout = new PrintWriter(socket.getOutputStream());
-			din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			socket.setSoTimeout(2000);
-		} catch (IOException e1) {
-			System.err.println("DAT: COULD NOT CONNECT TO SERVER ON IP " + SERVER_IP + " PORT " + SERVER_PORT);
-			e1.printStackTrace();
+		while (socket == null) {
+			try{
+				socket = new Socket(SERVER_IP, SERVER_PORT);
+				dout = new PrintWriter(socket.getOutputStream());
+				din = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				socket.setSoTimeout(2000);
+			} catch (IOException e1) {
+				socket = null;
+				System.err.println("DAT: COULD NOT CONNECT TO SERVER ON IP " + SERVER_IP + " PORT " + SERVER_PORT);
+			}
 		}
 		collector = arg2;
 	}

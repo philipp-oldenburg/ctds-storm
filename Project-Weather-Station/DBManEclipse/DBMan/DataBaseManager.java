@@ -173,7 +173,15 @@ public class DataBaseManager {
 				}
 				
 			};
-			client.init(receiver);
+			if (client == null) {
+				System.out.println("SensorClient unreachable.");
+				if (!reconnectorRunning) {
+					SCReconnector reconnector = new SCReconnector(receiver);
+					reconnector.start();
+				}
+			} else {
+				client.init(receiver);
+			}
 		}
 		
 		private class SCReconnector extends Thread {
@@ -563,7 +571,7 @@ public class DataBaseManager {
 //						} else System.out.println("JSONObject from ResultBolt is null.");
 					}
 				} catch (IOException e) {
-					e.printStackTrace();
+					System.out.println("ResultBolt connection has been closed.");
 				}
 			}
 			
@@ -650,13 +658,30 @@ public class DataBaseManager {
 							String input, output;
 							while((input = in.readLine()) != null) {
 								System.out.println("Processing WebServer request...");
+								System.out.println(input);
 								if (input.equals("NEWOWM") || input.equals("NEWSENS")) {
 									sendLatestDataVector(out, input);
-								} else if (input.equals("CLASSDATA")) {
-									out.write(currentOWMClass.toString());
+								} else if (input.equals("CLASSOWM")) {
+									System.out.println("received CLASSOWM");
+									System.out.println(currentOWMClass == null);
+									if (currentOWMClass != null) {
+										out.write(currentOWMClass.toString() + System.getProperty("line.separator"));
+										System.out.println("returning currentOWMClass");
+									} else {
+										out.write(new JSONObject().toString() + System.getProperty("line.separator"));
+										System.out.println("returning empty OWMClass");
+									}
 									out.flush();
 								} else if (input.equals("CLASSSENS")) {
-									out.write(currentSENSClass.toString());
+									System.out.println("received CLASSSENS");
+									System.out.println(currentSENSClass == null);
+									if (currentSENSClass != null) {
+										out.write(currentSENSClass.toString() + System.getProperty("line.separator"));
+										System.out.println("returning currentSENSClass");
+									} else {
+										out.write(new JSONObject().toString() + System.getProperty("line.separator"));
+										System.out.println("returning empty SENSClass");
+									}
 									out.flush();
 								} else {
 									String[] inputParts = input.split(";");

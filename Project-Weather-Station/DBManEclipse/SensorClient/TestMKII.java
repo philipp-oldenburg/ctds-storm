@@ -16,9 +16,14 @@ public class TestMKII implements Receiver {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		client.requestAllData();
-		client.requestHumidity();
-		client.requestTemperature();
+//		client.requestAllData();
+		try {
+			client.requestWindSpeed();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+//		client.requestHumidity();
+//		client.requestTemperature();
 	}
 
 	@Override

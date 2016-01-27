@@ -69,28 +69,34 @@ public class SensorClientMkII {
 	}
 	
 	public void requestWindSpeed() throws IOException {
-		try {
-			URL url = new URL("http://192.168.2.222:8080");
-			BufferedReader is = new BufferedReader(new InputStreamReader(url.openStream()));
+		Thread thread = new Thread() {
+			public void run(){
 			
-			try {
-				receiver.receivedWindSpeed(Double.parseDouble(is.readLine()));
-			} finally {
-				is.close();
+				try {
+					URL url = new URL("http://192.168.2.222:8080");
+					System.out.println("Opening stream to wind sensor...");
+					BufferedReader is = new BufferedReader(new InputStreamReader(url.openStream()));
+					System.out.println("Opened connection to wind sensor.");
+					try {
+						receiver.receivedWindSpeed(Double.parseDouble(is.readLine()));
+					} finally {
+						is.close();
+					}
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NumberFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
+				catch (IOException e) {
+					System.out.println("Wind sensor unavailable.");
+					e.printStackTrace();
+				}
+				receiver.receivedWindSpeed(-1);
 			}
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-//		catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-		receiver.receivedWindSpeed(-1);
-		
+		};
+		thread.start();
 	}
 	
 	public void ping() throws IOException {
