@@ -173,7 +173,15 @@ public class DataBaseManager {
 				}
 				
 			};
-			client.init(receiver);
+			if (client == null) {
+				System.out.println("SensorClient unreachable.");
+				if (!reconnectorRunning) {
+					SCReconnector reconnector = new SCReconnector(receiver);
+					reconnector.start();
+				}
+			} else {
+				client.init(receiver);
+			}
 		}
 		
 		private class SCReconnector extends Thread {
