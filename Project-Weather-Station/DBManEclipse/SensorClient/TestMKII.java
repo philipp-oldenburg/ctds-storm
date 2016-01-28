@@ -16,7 +16,7 @@ public class TestMKII implements Receiver {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-//		client.requestAllData();
+		client.requestAllData();
 		try {
 			client.requestWindSpeed();
 		} catch (IOException e) {
