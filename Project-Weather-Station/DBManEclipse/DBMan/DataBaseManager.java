@@ -828,16 +828,17 @@ public class DataBaseManager {
 						} else {
 							query += "*";
 						}
-						query += " FROM weatherdatalog WHERE ";
+						query += " FROM weatherdatalog WHERE";
 						if (columns.length == 1 && distinct) {
 							if (columns[0].contains("temperature")) {
-								query += columns[0] + " <> '-300'";
-							} else if (columns[0].contains("pressure") || columns[0].contains("humidity") || columns[0].contains("windspeed")) {
-								query += columns[0] + " <> '-1'";
+								query += " " + columns[0] + " <> '-300'";
+							} else if (columns[0].contains("pressure") || columns[0].contains("humidity") || columns[0].contains("windspeed") || columns[0].contains("light")) {
+								query += " " + columns[0] + " <> '-1'";
 							}
+							query += " AND";
 							
 						}
-						query += " AND timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
+						query += " timestamp BETWEEN '" + timestamps[0] + "' AND '" + timestamps[1] + "';";
 						try {
 							Statement statement = conn.createStatement();
 							ResultSet rs = statement.executeQuery(query);
