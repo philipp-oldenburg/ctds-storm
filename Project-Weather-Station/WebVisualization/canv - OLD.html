@@ -23,7 +23,7 @@
   <body>
 	<div class="container">
 		<div class="page-header">
-			<h1>Sensor Data Plots</h1>
+			<h1> Air Quality Monitor</h1>
 		</div><!-- page-header -->
 		<div class="row">
 			<div class="panel panel-default">
@@ -48,9 +48,7 @@
 							</button>
 						</div><!-- .btn-group -->
 					</div><!-- .btn-toolbar -->
-					<div id="chart1" style="width:80%;height:500px;"></div>
-					<div id="chart2" style="width:80%;height:500px;"></div>
-					<div id="chart3" style="width:80%;height:500px;"></div>
+					<div id="chart" style="width:80%;height:500px;"></div>
 					<div id="msgBar" class="well">
 					
 					</div><!-- #msgBar.well -->
@@ -66,17 +64,13 @@
     <!-- Latest compiled and minified JavaScript -->
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 	<!-- Include canvasjs, a plotting library -->
-	<script language="javascript" type="text/javascript" src="canvasjs-1.7.0/canvasjs.min.js"></script>
+	<script language="javascript" type="text/javascript" src="lib/canvasjs.min.js"></script>
 	<!-- Custom script, which may go into own file -->
 	<script language="javascript" type="text/javascript">
 		/*
 		 * Following the kindly provided guide from
 		 *		http://canvasjs.com/docs/charts/how-to/creating-dynamic-charts/
 		 */
-		//Month is 1 based
-		function daysInMonth(month,year) {
-			return new Date(year, month, 0).getDate();
-		}
 		var srcDps = [{x: 1, y: 10}, {x: 2, y: 10}, {x: 3, y: 10}, {x: 4, y: 10}, {x: 5, y: 10}];   //dataPoints. 
 		var dps = srcDps.slice();
 		var xVal = dps.length + 1;
@@ -84,11 +78,6 @@
 		var yVal = 10;
 		var updateInterval = 1000; //ms
 		var doUpdate = true;
-		
-		var date = new Date();
-		var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-		var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-		
 		var updateChart = function(chart){
 			if(doUpdate){
 				yVal = yVal + Math.round(5+Math.random() *(-5-5));
@@ -100,9 +89,9 @@
 				chart.render();
 			}
 		}
-		var options1 = {
+		var options = {
 				title: {
-					text: 'Temperature'
+					text: 'Live Data Example'
 				},
 				axisX: {
 					title: 'Some Values'
@@ -111,138 +100,20 @@
 					title: 'Units'
 				},
 				data: [{
-					type: 'spline',
-					dataPoints: dps
-				}]
-			}
-		var options2 = {
-				title: {
-					text: 'Humidity'
-				},
-				axisX: {
-					title: 'Some Values'
-				},
-				axisY: {
-					title: 'Units'
-				},
-				data: [{
-					type: 'spline',
-					dataPoints: dps
-				}]
-			}
-		var options3 = {
-				title: {
-					text: 'Wind Speed'
-				},
-				axisX: {
-					title: 'Some Values'
-				},
-				axisY: {
-					title: 'Units'
-				},
-				data: [{
-					type: 'spline',
+					type: 'line',
 					dataPoints: dps
 				}]
 			}
 		var interval;
-		function createAndAppendSelect(chartID, selectID){
-			var selectsource = '<select class="select'+selectID+'">'+
-						'<option value="0">January</option>'+
-						'<option value="1">February</option>'+
-						'<option value="2">March</option>'+
-						'<option value="3">April</option>'+
-						'<option value="4">May</option>'+
-						'<option value="5">June</option>'+
-						'<option value="6">July</option>'+
-						'<option value="7">August</option>'+
-						'<option value="8">September</option>'+
-						'<option value="9">October</option>'+
-						'<option value="10">November</option>'+
-						'<option value="11">December</option>'+
-					'</select>';
-			$(selectsource).insertBefore("#"+chartID)
-		}
-		function createYearSelectors() {
-			var selectsource = '<select class="selectYear1">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select1");
-			selectsource = '<select class="selectYear2">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select2");
-			
-			selectsource = '<select class="selectYear3">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select3");
-		}
-		function createDaySelectors() {
-			var selectsource = '<select class="selectYear1">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select1");
-			selectsource = '<select class="selectYear2">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select2");
-			
-			selectsource = '<select class="selectYear3">'+
-						'<option value="0">2014</option>'+
-						'<option value="1">2015</option>'+
-						'<option value="2">2016</option>'+
-					'</select>';
-			$(selectsource).insertBefore(".select3");
-		}
-		
 		$(document).ready(function(){
-			// make selects
-			createAndAppendSelect('chart1', 1);
-			createAndAppendSelect('chart2', 2);
-			createAndAppendSelect('chart3', 3);
-			
-			createYearSelectors();
-			
-			createDaySelectors();
-			
 			//create chart
-			var chart = new CanvasJS.Chart('chart1', options1);
+			var chart = new CanvasJS.Chart('chart', options);
 			// render chart
 			chart.render();
-			//create chart
-			var chart = new CanvasJS.Chart('chart2', options2);
-			// render chart
-			chart.render();
-			//create chart
-			var chart = new CanvasJS.Chart('chart3', options3);
-			// render chart
-			chart.render();
-			
-			
 			// apply event handlers to buttons
-			$( ".select1" ).change(function() {
-				$('#msgBar').text("select1 changed: " + $(".select1").val());
-			});
-			$( ".select2" ).change(function() {
-				$('#msgBar').text("select2 changed: " + $(".select2").val());
-			});
-			$( ".select3" ).change(function() {
-				$('#msgBar').text("select3 changed: " + $(".select3").val());
-			});
 			$('#reset-btn').click(function(event){
 				$('#msgBar').text("Reset pressed");
-				options1.data[0].dataPoints = srcDps.slice();
+				options.data[0].dataPoints = srcDps.slice();
 				xVal = srcXVal;
 				chart.render();
 			});

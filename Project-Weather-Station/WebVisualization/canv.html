@@ -157,6 +157,7 @@
 			else if($(".selectType").val() == 5) type = "humidity";
 			else if($(".selectType").val() == 6) type = "pressure";
 			else if($(".selectType").val() == 7) type = "sensorwindspeed";
+			else if($(".selectType").val() == 8) type = "light";
 			
 			request = $.ajax({
 				url: "/datagatherer.php",
@@ -168,6 +169,7 @@
 			// Callback handler that will be called on success
 			request.done(function (response, textStatus, jqXHR){
 				// Log a message to the console
+				console.log(response);
 				obj = JSON.parse(response);
 				console.log("recieved:" + obj.length);
 				
@@ -183,6 +185,7 @@
 						else if($(".selectType").val() == 5) tuples.push([obj[key].timestamp, obj[key].humidity]);
 						else if($(".selectType").val() == 6) tuples.push([obj[key].timestamp, obj[key].pressure]);
 						else if($(".selectType").val() == 7) tuples.push([obj[key].timestamp, obj[key].sensorwindspeed]);
+						else if($(".selectType").val() == 8) tuples.push([obj[key].timestamp, obj[key].light]);
 					}
 				}
 				tuples.sort(function(a, b) {
@@ -207,6 +210,9 @@
 					}
 					else if ($(".selectType").val() == 0) {
 						if ((tuples[i][1] < 50)) array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
+					}
+					else if ($(".selectType").val() == 8) {
+						if ((tuples[i][1] < 90000)) array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
 					}
 					else {
 						array.push({x: day + hour/24 + min/1440 + sec/86400, y: Number(tuples[i][1])});
@@ -242,6 +248,7 @@
 						'<option value="5">SS_Humidity</option>'+
 						'<option value="6">SS_Pressure</option>'+
 						'<option value="7">SS_Windspeed</option>'+
+						'<option value="8">SS_Luminosity</option>'+
 					'</select>';
 			$( "#selectdiv" ).append(selectsource);
 		
@@ -373,6 +380,11 @@
 					options.title.text = "Wind Speed";
 					options.axisX.title = "Time";
 					options.axisY.title = "Wind Speed[m/s]";
+				}
+				else if($( ".selectType" ).val() == 8) {
+					options.title.text = "Luminosity";
+					options.axisX.title = "Time";
+					options.axisY.title = "Luminosity[lux]";
 				}
 				updateGraph();
 			});
